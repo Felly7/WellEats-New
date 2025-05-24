@@ -1,9 +1,11 @@
 import { Tabs } from 'expo-router';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from '@/hooks/useColorScheme';
 
 export default function TabLayout() {
+  const isDarkMode = useColorScheme() === 'dark';
   return (
     <Tabs
       screenOptions={{
@@ -19,7 +21,7 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => (
             <Ionicons 
               name="home-outline" 
-              size={24} 
+              size={20} 
               color={focused ? 'black' : '#888'} 
             />
           ),
@@ -34,7 +36,7 @@ export default function TabLayout() {
             <View style={styles.centerIcon}>
               <Ionicons 
                 name="search" 
-                size={30} 
+                size={22} 
                 color={focused ? 'black' : '#888'} 
               />
             </View>
@@ -49,12 +51,13 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => (
             <Ionicons 
               name="person-outline" 
-              size={24} 
+              size={20} 
               color={focused ? 'black' : '#888'} 
             />
           ),
         }}
       />
+
       
     </Tabs>
   );
@@ -65,19 +68,18 @@ const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
     bottom: 20, // Moves it up slightly
-    left: 20,
-    right: 20,
-    height: 60,
+    left: 40,
+    right: 40,
+    height: 50,
     backgroundColor: '#FEFEFA', // Dark mode tab bar
-    borderRadius: 15, // Rounded edges
-    borderTopWidth: 
-    0, // No default border
+    borderRadius:50, // Rounded edges
+    borderTopWidth: 0, // No default border
     elevation: 5, // Android shadow
     shadowColor: '#000',
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
     marginHorizontal: 100,
-    paddingTop: 10,
+    paddingTop: 5,
   },
   // centerIcon: {
   //   width: 50,

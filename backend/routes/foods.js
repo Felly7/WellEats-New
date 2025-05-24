@@ -1,18 +1,16 @@
 // routes/foods.ts
-import { Router } from 'express';
-import { Food } from '../models/Food';
-import { Product } from '../models/Product';
+const { Router } = require('express');
+const { Food }    = require('../models/Food');
+const { Product}  = require('../models/Product');
 
-const router = Router();
+
+  const router = Router();
 
 router.get('/', async (req, res) => {
-  const { allergies = [], conditions = [] } = req.query as {
-    allergies?: string[];
-    conditions?: string[];
-  };
+  const { allergies = [], conditions = [] } = req.query;
 
   // 1) Base nutrient query (e.g. low‐sodium for hypertension)
-  const nutrientFilter: any = {};
+  const nutrientFilter = {};
   if (conditions.includes('hypertension')) nutrientFilter['nutrients.sodium'] = { $lt: 140 };
   if (conditions.includes('diabetes'))    nutrientFilter['nutrients.sugars'] = { $lt: 5 };
   // …add more condition rules…
@@ -36,4 +34,4 @@ router.get('/', async (req, res) => {
   res.json({ results });
 });
 
-export default router;
+module.exports = router;

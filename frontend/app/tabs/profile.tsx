@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, FlatList, Alert } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
@@ -9,11 +9,10 @@ import { router } from 'expo-router';
 
 const menuItems = [
     { title: 'User Profile', icon: 'receipt-outline', screen: 'Profile' },
+    { title: 'History', icon: 'book-outline', screen: 'history' },
     { title: 'Security and Privacy', icon: 'person-outline', screen: 'Security and Privacy' },
     { title: 'Notifications', icon: 'notifications-outline', screen: 'Notifications' },
     { title: 'Need help?', icon: 'help-circle-outline', screen: 'Help' },
-    { title: 'Rate this app', icon: 'star-outline', screen: 'Rate' },
-    { title: 'Help improve the app', icon: 'info-outline', screen: 'Improve' },
     { title: 'Sign out', icon: 'log-out-outline', screen: 'logout' },
 ];
 export default function ProfileScreen() {

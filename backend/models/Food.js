@@ -1,5 +1,5 @@
-// models/Food.ts
-import { Schema, model } from 'mongoose';
+// models/Food.js
+const { Schema, model } = require('mongoose');
 
 const FoodSchema = new Schema({
   fdcId:       { type: Number, unique: true },
@@ -13,19 +13,7 @@ const FoodSchema = new Schema({
   },
 });
 
-export const Food = model('Food', FoodSchema);
+const Food = model('Food', FoodSchema);
 
-// models/Product.ts
-import { Schema, model } from 'mongoose';
-
-const ProductSchema = new Schema({
-  code: String, // barcode
-  name: String,
-  allergens: {
-    contains_gluten: Boolean,
-    contains_milk:   Boolean,
-    contains_nuts:   Boolean,
-  },
-});
-
-export const Product = model('Product', ProductSchema);
+// Export as a property so you can destructure it in routes:
+module.exports.Food = Food;
