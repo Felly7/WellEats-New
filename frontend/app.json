@@ -9,14 +9,21 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.felly.WellEats",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Use Face ID to quickly and securely sign in to WellEats."
+      },
+      "useNextNotificationsApi": true,
+      "ITSAppUsesNonExemptEncryption": false
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.felly.WellEats"
     },
     "web": {
       "bundler": "metro",
@@ -38,6 +45,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "99d3817d-4aba-44e4-a6bb-3f6904d97a65"
+      }
     }
   }
 }

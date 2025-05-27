@@ -3,23 +3,23 @@ import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { useAuth } from '@/src/context/AuthContext'; 
 
 const Logout = () => {
   const router = useRouter();
+  // pull logout() from context
+  const { logout } = useAuth();
 
   const handleLogout = async () => {
     try {
-      // 1. Remove the token (and any other persisted user data)
-      await AsyncStorage.removeItem('userToken');
-      // e.g. if you stored user info:
-      // await AsyncStorage.removeItem('userInfo');
+      // clears both in-memory and persisted token
+      await logout();
+      console.log('✅ [logout] token cleared');
 
-      console.log('✅ [logout] token cleared from storage');
-
-      // 2. Navigate back to login (replace so user can't go “back” into a protected screen)
-      router.replace('/login');
+      // send user back to login
+      router.replace('login');
     } catch (err) {
-      console.error('❌ [logout] error clearing token:', err);
+      console.error('❌ [logout] error:', err);
       Alert.alert('Logout failed', 'Please try again.');
     }
   };

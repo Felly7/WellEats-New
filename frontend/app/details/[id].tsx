@@ -44,40 +44,42 @@ export default function DetailsScreen() {
 
   const [dish, setDish]               = useState<any>(null);
   const [loadingDish, setLoadingDish] = useState(true);
-
   const [ingredients, setIngredients]     = useState<IngredientInfo[]>([]);
   const [loadingNutrition, setLoadingNut] = useState(true);
   const [isFavorite, setIsFavorite]       = useState(false);
 
-  // 1️⃣ Fetch the meal detail, check favorite & record history
+  // 1️⃣ Fetch meal, check favorite & record history
   useEffect(() => {
     (async () => {
       try {
         const data = await getMealDetails(id);
         setDish(data);
 
-        // ── favorite check ─────────────────────
+        // — favorite check —
         const favJson = await AsyncStorage.getItem(FAVORITES_KEY);
         const favList = favJson ? JSON.parse(favJson) : [];
-        setIsFavorite(favList.some((f:any) => f.idMeal === data.idMeal));
-        
-      // — HISTORY LOG —  
-      const histJson = await AsyncStorage.getItem(HISTORY_KEY);
-      const histList = histJson ? JSON.parse(histJson) : [];
-      // prepend new entry with timestamp
-      const newEntry = {
-        idMeal: data.idMeal,
-        strMeal: data.strMeal,
-        strMealThumb: data.strMealThumb,
-        viewedAt: Date.now(),
-      };
-      // filter out duplicates
-      const deduped = [newEntry, ...histList.filter((h:any)=>h.idMeal!==data.idMeal)];
-        // cap length
+        setIsFavorite(favList.some((f: any) => f.idMeal === data.idMeal));
+
+        // — record to history —
+        const histJson = await AsyncStorage.getItem(HISTORY_KEY);
+        let histList = histJson ? JSON.parse(histJson) : [];
+        const newEntry = {
+          idMeal:       data.idMeal,
+          strMeal:      data.strMeal,
+          strMealThumb: data.strMealThumb,
+          viewedAt:     Date.now(),
+        };
+        // prepend & dedupe
+        histList = [
+          newEntry,
+          ...histList.filter((h: any) => h.idMeal !== data.idMeal)
+        ];
+        // cap at MAX_HISTORY
         if (histList.length > MAX_HISTORY) {
           histList = histList.slice(0, MAX_HISTORY);
         }
         await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(histList));
+
       } catch (e) {
         console.error('Error fetching dish:', e);
       } finally {
@@ -91,7 +93,7 @@ export default function DetailsScreen() {
     const json = await AsyncStorage.getItem(FAVORITES_KEY);
     let list   = json ? JSON.parse(json) : [];
     if (isFavorite) {
-      list = list.filter((f:any) => f.idMeal !== dish.idMeal);
+      list = list.filter((f: any) => f.idMeal !== dish.idMeal);
     } else {
       list.push({
         idMeal:       dish.idMeal,
@@ -103,7 +105,7 @@ export default function DetailsScreen() {
     setIsFavorite(!isFavorite);
   };
 
-  // 2️⃣ Parse ingredients, fetch nutrition & allergens
+  // 2️⃣ Parse ingredients + fetch nutrition/allergens
   useEffect(() => {
     if (!dish) return;
     (async () => {
@@ -149,18 +151,12 @@ export default function DetailsScreen() {
         <Image source={{ uri: dish.strMealThumb }} style={styles.image} />
 
         {/* Back Button */}
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="white" />
         </TouchableOpacity>
 
         {/* Favorite Button */}
-        <TouchableOpacity
-          style={styles.favoriteButton}
-          onPress={toggleFavorite}
-        >
+        <TouchableOpacity style={styles.favoriteButton} onPress={toggleFavorite}>
           <Ionicons
             name={isFavorite ? 'heart' : 'heart-outline'}
             size={24}
@@ -168,7 +164,7 @@ export default function DetailsScreen() {
           />
         </TouchableOpacity>
 
-        {/* Title & Instructions */}
+        {/* Content */}
         <View style={[styles.overlay, { backgroundColor: isDarkMode ? '#000' : '#FFF' }]}>
           <Text style={styles.title}>{dish.strMeal}</Text>
           <Text style={[styles.description, { color: isDarkMode ? '#CCC' : '#555' }]}>
@@ -249,7 +245,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius:20,
   },
   title:           { fontSize: 28, fontWeight: 'bold', color: '#D4A857' },
-  description:     { fontSize: 14, marginVertical: 12 },
+  description:     { fontSize: 16, marginVertical: 12 },
   subheader:       { fontSize: 20, fontWeight: 'bold', marginTop: 16 },
 
   row:             {

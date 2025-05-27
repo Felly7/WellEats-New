@@ -1,71 +1,105 @@
+// File: app/login.tsx
 import { router } from 'expo-router';
-import { useNavigation } from '@react-navigation/native'   // ← change here
-import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+} from 'react-native';
 import Checkbox from 'expo-checkbox';
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { loginUser } from '@/services/api'; // Import login function from API
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as LocalAuthentication from 'expo-local-authentication';
+import { loginUser } from '@/services/api';
+import { useAuth } from '@/src/context/AuthContext';
 
-const LoginScreen = () => {
-    // State variables for managing email, password, and "Remember Me" checkbox
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+export default function LoginScreen() {
+  const [email, setEmail]         = useState('');
+  const [password, setPassword]   = useState('');
   const [isChecked, setIsChecked] = useState(false);
-  const [loading, setLoading]   = useState(false)
+  const [loading, setLoading]     = useState(false);
+  const [showBioButton, setShowBioButton] = useState(false);
+  const [bioType, setBioType]             = useState<string | null>(null);
 
+  const navigation = router;
+  const { login } = useAuth();
 
-  const navigation = useNavigation()   // ← useNavigation instead of useRouter
-
-  // On mount: auto-login if token exists
+  // Detect biometric hardware and enrollment
   useEffect(() => {
-    const checkToken = async () => {
-      try {
-        const token = await AsyncStorage.getItem('USER_TOKEN')
+    (async () => {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      if (!hasHardware) return;
+      const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
+      if (types.length === 0) return;
+      const label = types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)
+        ? 'Face ID'
+        : 'Fingerprint';
+      setBioType(label);
+      setShowBioButton(true);
+    })();
+  }, []);
+
+  // Biometric login handler with enrollment check and fallback
+  const handleBiometricLogin = async () => {
+    try {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      if (!hasHardware) {
+        Alert.alert('Error', 'Biometric hardware not available');
+        return;
+      }
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!isEnrolled) {
+        Alert.alert('No Biometrics', 'Please enroll Face ID or Fingerprint in your device settings.');
+        return;
+      }
+      console.log('Starting biometric auth');
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: `Login with ${bioType}`,
+        cancelLabel: 'Cancel',
+        fallbackLabel: 'Use Passcode',
+      });
+      console.log('Biometric auth result:', result);
+      if (result.success) {
+        const token = await AsyncStorage.getItem('USER_TOKEN');
         if (token) {
-          // Replace the stack so user can't go back to login
-          navigation.replace('tabs')  
+          await login(token);
+          navigation.replace('tabs');
+        } else {
+          Alert.alert('No Credentials', 'Please login manually first.');
         }
-      } catch (err) {
-        console.log('Error reading token', err)
+      } else {
+        Alert.alert('Authentication Failed', 'Biometric login was not successful.');
       }
+    } catch (e) {
+      console.log('Biometric error:', e);
+      Alert.alert('Error', 'An error occurred during biometric authentication.');
     }
-    checkToken()
-  }, [navigation])
+  };
 
-  // Handle login tap
-const handleLogin = async () => {
-  setLoading(true)
-  try {
-    const data = await loginUser(email, password)
-    console.log('Login success:', data)
-
-    if (data.message === 'Login successful') {
-      if (isChecked && data.token) {
-        await AsyncStorage.setItem('USER_TOKEN', data.token)
+  // Manual login
+  const handleLogin = async () => {
+    setLoading(true);
+    try {
+      const data = await loginUser(email, password);
+      if (data.message === 'Login successful' && data.token) {
+        await login(data.token);
+        navigation.replace('tabs');
+      } else {
+        Alert.alert('Login failed', data.message || 'Invalid credentials');
       }
-      navigation.replace('tabs')
-    } else {
-      // server responded 200 but with a failure message
-      alert(data.message || 'Login failed')
+    } catch (e) {
+      console.log('Login error:', e);
+      Alert.alert('Error', 'An unexpected error occurred');
+    } finally {
+      setLoading(false);
     }
+  };
 
-  } catch (err: any) {
-    // Log out the full response so you can see exactly what the server returned
-    if (err.isAxiosError && err.response) {
-      console.log('Status:', err.response.status)
-      console.log('Headers:', err.response.headers)
-      console.log('Body:', err.response.data)
-      // Often err.response.data will have a helpful error message
-      alert(err.response.data.error || 'Invalid login credentials')
-    } else {
-      console.log('Unexpected error:', err)
-      alert('An unexpected error occurred')
-    }
-  } finally {
-    setLoading(false)
-  }
-}
+  const iconName = bioType === 'Face ID' ? 'eye-outline' : 'finger-print-outline';
 
   return (
     <View style={styles.container}>
@@ -80,7 +114,7 @@ const handleLogin = async () => {
           <TextInput
             style={styles.input}
             placeholder="Email"
-            placeholderTextColor={'#000'}
+            placeholderTextColor="#000"
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
@@ -92,14 +126,13 @@ const handleLogin = async () => {
           <TextInput
             style={styles.input}
             placeholder="Password"
-            placeholderTextColor={'#000'}
+            placeholderTextColor="#000"
             secureTextEntry
             value={password}
             onChangeText={setPassword}
           />
         </View>
 
-        {/* Remember Me */}
         <View style={styles.optionsContainer}>
           <View style={styles.rememberContainer}>
             <Checkbox value={isChecked} onValueChange={setIsChecked} color={isChecked ? '#D62828' : undefined} />
@@ -110,12 +143,17 @@ const handleLogin = async () => {
           </TouchableOpacity>
         </View>
 
-        {/* Login Button */}
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text style={styles.loginButtonText}>Login</Text>
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
+          <Text style={styles.loginButtonText}>{loading ? 'Logging in...' : 'Login'}</Text>
         </TouchableOpacity>
 
-        {/* Register Link */}
+        {showBioButton && bioType && (
+          <TouchableOpacity style={styles.bioButton} onPress={handleBiometricLogin}>            
+            <Ionicons name={iconName} size={24} color="#FFF" />
+            <Text style={styles.bioButtonText}>Login with {bioType}</Text>
+          </TouchableOpacity>
+        )}
+
         <View style={styles.footer}>
           <Text>Don't have an account? </Text>
           <TouchableOpacity onPress={() => router.push('/register')}>
@@ -125,9 +163,8 @@ const handleLogin = async () => {
       </View>
     </View>
   );
-};
+}
 
-// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -201,6 +238,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 18,
   },
+  bioButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1E90FF',
+    padding: 12,
+    borderRadius: 8,
+    marginVertical: 10,
+  },
+  bioButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    marginLeft: 8,
+    fontWeight: '600',
+  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -210,5 +262,3 @@ const styles = StyleSheet.create({
     color: '#1E90FF',
   },
 });
-
-export default LoginScreen;

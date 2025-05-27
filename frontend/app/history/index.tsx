@@ -1,5 +1,5 @@
 // app/history/index.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,8 @@ import {
   ImageBackground,
   SafeAreaView,
   ScrollView,
+  RefreshControl,
+  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -21,17 +23,44 @@ const HISTORY_KEY = 'HISTORY';
 export default function HistoryScreen() {
   const isDarkMode = useColorScheme() === 'dark';
   const router     = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [history, setHistory] = useState<any[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [history, setHistory]     = useState<any[]>([]);
+
+  const loadHistory = useCallback(async () => {
+    const json = await AsyncStorage.getItem(HISTORY_KEY);
+    const list = json ? JSON.parse(json) : [];
+    setHistory(list);
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
-    (async () => {
-      const json = await AsyncStorage.getItem(HISTORY_KEY);
-      const list = json ? JSON.parse(json) : [];
-      setHistory(list);
-      setLoading(false);
-    })();
-  }, []);
+    loadHistory();
+  }, [loadHistory]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadHistory();
+    setRefreshing(false);
+  }, [loadHistory]);
+
+  const onClear = () => {
+    Alert.alert(
+      'Clear History',
+      'Are you sure you want to remove all history?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: async () => {
+            await AsyncStorage.removeItem(HISTORY_KEY);
+            setHistory([]);
+          },
+        },
+      ]
+    );
+  };
 
   if (loading) {
     return (
@@ -43,31 +72,38 @@ export default function HistoryScreen() {
 
   return (
     <SafeAreaView style={[styles.container, isDarkMode && styles.darkBg]}>
-      {/* Header */}
+      {/* Header with Clear button */}
       <View style={[styles.header, isDarkMode && styles.headerDark]}>
         <Ionicons name="time" size={28} color="#6B8E23" />
         <Text style={[styles.headerTitle, { color: isDarkMode ? '#FFF' : '#000' }]}>
           Recently Viewed
         </Text>
-        <Ionicons name="time" size={28} color="transparent" />
+        <TouchableOpacity onPress={onClear}>
+          <Ionicons name="trash" size={24} color={isDarkMode ? '#FFF' : '#000'} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
         style={styles.scrollContainer}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDarkMode ? '#FFF' : '#000'} />
+        }
       >
         {history.length === 0 ? (
-          <View style={styles.empty}>
-            <ImageBackground
-              source={require('../../assets/images/notes.jpg')}
-              style={styles.emptyImage}
-              imageStyle={{ opacity: 0.3 }}
-            >
-              <Text style={[styles.emptyText, { color: isDarkMode ? '#FFF' : '#000' }]}>
-                You haven’t viewed any recipes yet.
-              </Text>
-            </ImageBackground>
+          <View style={styles.emptyContainer}>
+            <Ionicons
+              name="restaurant-outline"
+              size={80}
+              color={isDarkMode ? '#666' : '#CCC'}
+            />
+            <Text style={[styles.emptyTitle, isDarkMode && styles.emptyTitleDark]}>
+              No Recipes Yet
+            </Text>
+            <Text style={[styles.emptySubtitle, isDarkMode && styles.emptySubtitleDark]}>
+              Browse meals and we’ll save them here for you to revisit later.
+            </Text>
           </View>
         ) : (
           history.map(item => (
@@ -77,9 +113,15 @@ export default function HistoryScreen() {
               onPress={() => router.push(`/details/${item.idMeal}`)}
             >
               <Image source={{ uri: item.strMealThumb }} style={styles.thumb} />
-              <Text style={[styles.title, { color: isDarkMode ? '#FFF' : '#000' }]}>
-                {item.strMeal}
-              </Text>
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={[styles.title, { color: isDarkMode ? '#FFF' : '#000' }]}>
+                  {item.strMeal}
+                </Text>
+                {/* Viewed timestamp */}
+                <Text style={[styles.date, { color: isDarkMode ? '#AAA' : '#666' }]}>
+                  Viewed {new Date(item.viewedAt).toLocaleString()}
+                </Text>
+              </View>
             </TouchableOpacity>
           ))
         )}
@@ -134,8 +176,35 @@ const styles = StyleSheet.create({
   },
   rowDark:        { backgroundColor:'#2A2A2A', elevation:0 },
   thumb:          { width:80, height:80, borderRadius:8 },
-  title:          { marginLeft:16, fontSize:18, flexShrink:1 },
+  title:          { fontSize:18, flexShrink:1 },
+  date:           { fontSize:12, marginTop:4 },
 
   footer:         { marginTop:24, alignItems:'center' },
   footerText:     { fontSize:14, fontStyle:'italic' },
+  emptyContainer: {
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+  paddingHorizontal: 20,
+},
+emptyTitle: {
+  fontSize: 24,
+  fontWeight: '600',
+  marginTop: 16,
+  color: '#333',
+  
+},
+emptyTitleDark: {
+  color: '#DDD',
+},
+emptySubtitle: {
+  fontSize: 16,
+  marginTop: 8,
+  color: '#666',
+  textAlign: 'center',
+  lineHeight: 22,
+},
+emptySubtitleDark: {
+  color: '#AAA',
+},
 });

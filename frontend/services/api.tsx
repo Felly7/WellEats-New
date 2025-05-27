@@ -1,7 +1,7 @@
 import axios from 'axios';
                    
 
-export const API_URL = 'http://172.20.10.2:5000/api';
+export const API_URL = 'http://172.20.10.3:5000/api';
 export const baseURL = 'http://172.20.10.3:5000';
 const FDC_SEARCH_URL     = 'https://api.nal.usda.gov/fdc/v1/foods/search';
 const USDA_API_KEY       = 'q5erpaBFFqJmzGzu9H6zF7sfRoG2pjVoXzdChwdu'; // hard-code key

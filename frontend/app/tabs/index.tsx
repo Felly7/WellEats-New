@@ -106,7 +106,7 @@ export default function HomeScreen() {
         <Ionicons name="search-outline" size={20} color={isDark ? '#AAA' : '#666'} />
         <TextInput
           style={[styles.searchInput, isDark && styles.searchInputDark]}
-          placeholder="Search foods or restaurants"
+          placeholder="Search foods and recipes..."
           placeholderTextColor={isDark ? '#888' : '#AAA'}
           value={search}
           onChangeText={setSearch}
