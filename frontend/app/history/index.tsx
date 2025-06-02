@@ -8,11 +8,10 @@ import {
   StyleSheet,
   useColorScheme,
   ActivityIndicator,
-  ImageBackground,
-  SafeAreaView,
   ScrollView,
   RefreshControl,
   Alert,
+  SafeAreaView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -88,7 +87,11 @@ export default function HistoryScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDarkMode ? '#FFF' : '#000'} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={isDarkMode ? '#FFF' : '#000'}
+          />
         }
       >
         {history.length === 0 ? (
@@ -106,24 +109,32 @@ export default function HistoryScreen() {
             </Text>
           </View>
         ) : (
-          history.map(item => (
-            <TouchableOpacity
-              key={item.idMeal}
-              style={[styles.row, isDarkMode && styles.rowDark]}
-              onPress={() => router.push(`/details/${item.idMeal}`)}
-            >
-              <Image source={{ uri: item.strMealThumb }} style={styles.thumb} />
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={[styles.title, { color: isDarkMode ? '#FFF' : '#000' }]}>
-                  {item.strMeal}
-                </Text>
-                {/* Viewed timestamp */}
-                <Text style={[styles.date, { color: isDarkMode ? '#AAA' : '#666' }]}>
-                  Viewed {new Date(item.viewedAt).toLocaleString()}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))
+          history.map((item, index) => {
+            // If strMealThumb is a string, use { uri: ... }. Otherwise it's a local require.
+            const imageSource =
+              typeof item.strMealThumb === 'string'
+                ? { uri: item.strMealThumb }
+                : item.strMealThumb;
+
+            return (
+              <TouchableOpacity
+                key={`${item.idMeal}-${index}`}
+                style={[styles.row, isDarkMode && styles.rowDark]}
+                onPress={() => router.push(`/details/${item.idMeal}`)}
+              >
+                <Image source={imageSource} style={styles.thumb} />
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={[styles.title, { color: isDarkMode ? '#FFF' : '#000' }]}>
+                    {item.strMeal}
+                  </Text>
+                  {/* Viewed timestamp */}
+                  <Text style={[styles.date, { color: isDarkMode ? '#AAA' : '#666' }]}>
+                    Viewed {new Date(item.viewedAt).toLocaleString()}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })
         )}
 
         <View style={styles.footer}>
@@ -155,15 +166,27 @@ const styles = StyleSheet.create({
 
   loader:         { flex:1, justifyContent:'center', alignItems:'center' },
 
-  empty:          { flex:1, justifyContent:'center', alignItems:'center', paddingVertical:40 },
-  emptyImage:     {
-    width: '80%',
-    height: 180,
+  emptyContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    paddingHorizontal: 20,
   },
-  emptyText:      { fontSize:18, textAlign:'center', paddingHorizontal:20 },
+  emptyTitle:      {
+    fontSize: 24,
+    fontWeight: '600',
+    marginTop: 16,
+    color: '#333',
+  },
+  emptyTitleDark:  { color: '#DDD' },
+  emptySubtitle:   {
+    fontSize: 16,
+    marginTop: 8,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  emptySubtitleDark:{ color: '#AAA' },
 
   row:            {
     flexDirection:'row',
@@ -181,30 +204,4 @@ const styles = StyleSheet.create({
 
   footer:         { marginTop:24, alignItems:'center' },
   footerText:     { fontSize:14, fontStyle:'italic' },
-  emptyContainer: {
-  flex: 1,
-  justifyContent: 'center',
-  alignItems: 'center',
-  paddingHorizontal: 20,
-},
-emptyTitle: {
-  fontSize: 24,
-  fontWeight: '600',
-  marginTop: 16,
-  color: '#333',
-  
-},
-emptyTitleDark: {
-  color: '#DDD',
-},
-emptySubtitle: {
-  fontSize: 16,
-  marginTop: 8,
-  color: '#666',
-  textAlign: 'center',
-  lineHeight: 22,
-},
-emptySubtitleDark: {
-  color: '#AAA',
-},
 });

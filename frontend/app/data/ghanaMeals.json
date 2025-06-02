@@ -1,0 +1,115 @@
+
+[
+  {
+    "id": "jollof",
+    "name": "Ghanaian Jollof Rice",
+    "category": "Main",
+    "thumbnail": "jollof.jpg",
+    "ingredients": [
+      "Long-grain rice",
+      "Tomatoes",
+      "Tomato paste",
+      "Onion",
+      "Bell peppers",
+      "Scotch bonnets",
+      "Chicken stock",
+      "Vegetable oil",
+      "Salt, spices"
+    ],
+    "instructions": "1. Blend tomatoes, peppers, and onions. 2. Fry the paste + seasonings in oil. 3. Add washed rice + stock; simmer until done. 4. Stir occasionally to prevent burning.",
+    "nutrition": {
+      "calories": 400,
+      "protein": 8,
+      "fat": 10,
+      "carbs": 65
+    }
+  },
+  {
+    "id": "spaghetti",
+    "name": "Fried Spaghetti with Veggies",
+    "category": "Main",
+    "thumbnail": "spaghetti.jpg",
+    "ingredients": [
+      "Spaghetti",
+      "Mixed vegetables (carrots, peas, bell peppers)",
+      "Onions",
+      "Tomato paste",
+      "Vegetable oil",
+      "Salt, spices"
+    ],
+    "instructions": "1. Cook spaghetti until al dente. 2. Stir-fry onions and vegetables in oil. 3. Add cooked spaghetti and tomato paste; mix well.",
+    "nutrition": {
+      "calories": 350,
+      "protein": 10,
+      "fat": 8,
+      "carbs": 60
+    }
+  },
+  {
+    "id": "friedrice",
+    "name": "Fried Rice",
+    "category": "Main",
+    "thumbnail": "friedrice.jpg",
+    "ingredients": [
+      "Long-grain rice",
+      "Mixed vegetables (carrots, peas, corn)",
+      "Soy sauce",
+      "Onions",
+      "Bell peppers",
+      "Eggs",
+      "Vegetable oil"
+    ],
+    "instructions": "1. Cook rice until tender. 2. Stir-fry vegetables and onions in oil. 3. Add cooked rice, soy sauce, and beaten eggs; stir until eggs are cooked.",
+    "nutrition": {
+      "calories": 450,
+      "protein": 12,
+      "fat": 15,
+      "carbs": 70
+    }
+  },
+    {
+        "id": "salad",
+        "name": "Creamy Avocado Salad",
+        "category": "Salad",
+        "thumbnail": "salad.jpg",
+        "ingredients": [
+            "Ripe avocados",
+            "Cherry tomatoes",
+            "Cucumber",
+            "Red onion",
+            "Lemon juice",
+            "Olive oil",
+            "Salt, pepper"
+        ],
+        "instructions": "1. Dice avocados, tomatoes, cucumber, and onion. 2. In a bowl, mix lemon juice, olive oil, salt, and pepper. 3. Toss the vegetables in the dressing until well coated.",
+        "nutrition": {
+            "calories": 300,
+            "protein": 5,
+            "fat": 20,
+            "carbs": 25
+        }
+    },
+    {
+        "id": "springrolls",
+        "name": "Spring Rolls",
+        "category": "Appetizer",
+        "thumbnail": "springrolls.jpg",
+        "ingredients": [
+            "Rice paper wrappers",
+            "Shrimp or chicken",
+            "Lettuce",
+            "Carrots",
+            "Cucumber",
+            "Mint leaves",
+            "Peanut sauce"
+        ],
+        "instructions": "1. Soak rice paper in warm water until soft. 2. Place shrimp/chicken, lettuce, carrots, cucumber, and mint on the wrapper. 3. Roll tightly and serve with peanut sauce.",
+        "nutrition": {
+            "calories": 200,
+            "protein": 15,
+            "fat": 5,
+            "carbs": 30
+        }
+    }
+
+]

@@ -1,4 +1,4 @@
-// app/details/[id].tsx
+// File: app/details/[id].tsx
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -19,6 +19,7 @@ import {
   getNutritionByIngredient,
   getAllergenFlags,
 } from '../../services/api';
+import { getMealById, Meal } from '@/services/localData';
 
 type IngredientInfo = {
   name: string;
@@ -47,20 +48,63 @@ export default function DetailsScreen() {
   const [ingredients, setIngredients]     = useState<IngredientInfo[]>([]);
   const [loadingNutrition, setLoadingNut] = useState(true);
   const [isFavorite, setIsFavorite]       = useState(false);
+  const [localMeal, setLocalMeal] = useState<Meal | null>(null);
+  const [loadingLocal, setLoadingLocal] = useState(true);
 
-  // 1️⃣ Fetch meal, check favorite & record history
+  // 1️⃣ Fetch meal: check local dataset first, then remote; check favorite & record history
   useEffect(() => {
     (async () => {
+      // Try local dataset first
+      const m = getMealById(id);
+      if (m) {
+        setLocalMeal(m);
+        // Build a minimal `dish` object so UI code can rely on it if needed
+        setDish({
+          idMeal: m.id,
+          strMeal: m.name,
+          strMealThumb: m.thumbnail,
+          strInstructions: m.instructions,
+        });
+        // Check favorites (using the same key logic as remote)
+        const favJson = await AsyncStorage.getItem(FAVORITES_KEY);
+        const favList = favJson ? JSON.parse(favJson) : [];
+        setIsFavorite(favList.some((f: any) => f.idMeal === m.id));
+
+        // Record to history for local meal
+        const histJson = await AsyncStorage.getItem(HISTORY_KEY);
+        let histList = histJson ? JSON.parse(histJson) : [];
+        const newEntry = {
+          idMeal:       m.id,
+          strMeal:      m.name,
+          strMealThumb: m.thumbnail,
+          viewedAt:     Date.now(),
+        };
+        // Prepend and dedupe
+        histList = [
+          newEntry,
+          ...histList.filter((h: any) => h.idMeal !== m.id),
+        ];
+        if (histList.length > MAX_HISTORY) {
+          histList = histList.slice(0, MAX_HISTORY);
+        }
+        await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(histList));
+
+        setLoadingLocal(false);
+        // Skip remote fetch entirely
+        return;
+      }
+
+      // If not local, fetch remote
       try {
         const data = await getMealDetails(id);
         setDish(data);
 
-        // — favorite check —
+        // Favorite check for remote
         const favJson = await AsyncStorage.getItem(FAVORITES_KEY);
         const favList = favJson ? JSON.parse(favJson) : [];
         setIsFavorite(favList.some((f: any) => f.idMeal === data.idMeal));
 
-        // — record to history —
+        // Record remote to history
         const histJson = await AsyncStorage.getItem(HISTORY_KEY);
         let histList = histJson ? JSON.parse(histJson) : [];
         const newEntry = {
@@ -69,17 +113,14 @@ export default function DetailsScreen() {
           strMealThumb: data.strMealThumb,
           viewedAt:     Date.now(),
         };
-        // prepend & dedupe
         histList = [
           newEntry,
-          ...histList.filter((h: any) => h.idMeal !== data.idMeal)
+          ...histList.filter((h: any) => h.idMeal !== data.idMeal),
         ];
-        // cap at MAX_HISTORY
         if (histList.length > MAX_HISTORY) {
           histList = histList.slice(0, MAX_HISTORY);
         }
         await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(histList));
-
       } catch (e) {
         console.error('Error fetching dish:', e);
       } finally {
@@ -88,7 +129,7 @@ export default function DetailsScreen() {
     })();
   }, [id]);
 
-  // toggle favorite
+  // Toggle favorite (works for both local and remote)
   const toggleFavorite = async () => {
     const json = await AsyncStorage.getItem(FAVORITES_KEY);
     let list   = json ? JSON.parse(json) : [];
@@ -105,9 +146,9 @@ export default function DetailsScreen() {
     setIsFavorite(!isFavorite);
   };
 
-  // 2️⃣ Parse ingredients + fetch nutrition/allergens
+  // 2️⃣ If remote dish, parse ingredients + fetch nutrition/allergens
   useEffect(() => {
-    if (!dish) return;
+    if (!dish || localMeal) return;
     (async () => {
       const list: { name: string; measure: string }[] = [];
       for (let i = 1; i <= 20; i++) {
@@ -134,9 +175,10 @@ export default function DetailsScreen() {
       setIngredients(enriched);
       setLoadingNut(false);
     })();
-  }, [dish]);
+  }, [dish, localMeal]);
 
-  if (loadingDish) {
+  // Show loader until either local or remote data is ready
+  if ((localMeal && loadingLocal) || (!localMeal && loadingDish)) {
     return (
       <View style={[styles.loader, isDarkMode && styles.darkBg]}>
         <ActivityIndicator size="large" color={isDarkMode ? '#FFF' : '#000'} />
@@ -144,10 +186,70 @@ export default function DetailsScreen() {
     );
   }
 
+  // If local meal found, render its details
+  if (localMeal) {
+    return (
+      <SafeAreaView style={[styles.container, isDarkMode && styles.darkBg]}>
+        <ScrollView>
+          <Image source={localMeal.thumbnail} style={styles.image} />
+
+          {/* Back Button */}
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={24} color="white" />
+          </TouchableOpacity>
+
+          {/* Favorite Button */}
+          <TouchableOpacity style={styles.favoriteButton} onPress={toggleFavorite}>
+            <Ionicons
+              name={isFavorite ? 'heart' : 'heart-outline'}
+              size={24}
+              color="white"
+            />
+          </TouchableOpacity>
+
+          <View style={[styles.overlay, { backgroundColor: isDarkMode ? '#000' : '#FFF' }]}>
+            <Text style={[styles.title, isDarkMode && styles.textDark]}>
+              {localMeal.name}
+            </Text>
+            <Text style={[styles.description, { color: isDarkMode ? '#CCC' : '#555' }]}>
+              {localMeal.instructions}
+            </Text>
+
+            <Text style={[styles.subheader, isDarkMode && styles.textDark]}>Category</Text>
+            <Text style={[styles.textItem, isDarkMode && styles.textDark]}>
+              {localMeal.category}
+            </Text>
+
+            <Text style={[styles.subheader, isDarkMode && styles.textDark]}>Ingredients</Text>
+            {localMeal.ingredients.map((ing, idx) => (
+              <Text key={idx} style={[styles.textItem, isDarkMode && styles.textDark]}>
+                • {ing}
+              </Text>
+            ))}
+
+            <Text style={[styles.subheader, isDarkMode && styles.textDark]}>Nutrition</Text>
+            <Text style={[styles.textItem, isDarkMode && styles.textDark]}>
+              Calories: {localMeal.nutrition.calories}
+            </Text>
+            <Text style={[styles.textItem, isDarkMode && styles.textDark]}>
+              Protein: {localMeal.nutrition.protein} g
+            </Text>
+            <Text style={[styles.textItem, isDarkMode && styles.textDark]}>
+              Fat: {localMeal.nutrition.fat} g
+            </Text>
+            <Text style={[styles.textItem, isDarkMode && styles.textDark]}>
+              Carbs: {localMeal.nutrition.carbs} g
+            </Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // Otherwise render remote-fetched dish
   return (
     <SafeAreaView style={[styles.container, isDarkMode && styles.darkBg]}>
       <ScrollView>
-        {/* Dish Image */}
         <Image source={{ uri: dish.strMealThumb }} style={styles.image} />
 
         {/* Back Button */}
@@ -164,9 +266,8 @@ export default function DetailsScreen() {
           />
         </TouchableOpacity>
 
-        {/* Content */}
         <View style={[styles.overlay, { backgroundColor: isDarkMode ? '#000' : '#FFF' }]}>
-          <Text style={styles.title}>{dish.strMeal}</Text>
+          <Text style={[styles.title, isDarkMode && styles.textDark]}>{dish.strMeal}</Text>
           <Text style={[styles.description, { color: isDarkMode ? '#CCC' : '#555' }]}>
             {dish.strInstructions}
           </Text>
@@ -245,8 +346,10 @@ const styles = StyleSheet.create({
     borderTopRightRadius:20,
   },
   title:           { fontSize: 28, fontWeight: 'bold', color: '#D4A857' },
+  textDark:        { color: '#FFF' },
   description:     { fontSize: 16, marginVertical: 12 },
   subheader:       { fontSize: 20, fontWeight: 'bold', marginTop: 16 },
+  textItem:        { fontSize: 16, marginBottom: 8, color: '#000' },  // Added textItem style
 
   row:             {
     flexDirection:   'row',
@@ -267,4 +370,5 @@ const styles = StyleSheet.create({
   allergen:        { fontSize: 10, color: '#E63946', fontWeight: 'bold' },
 
   emptyText:       { fontSize: 16, marginTop: 20, textAlign: 'center' },
+  
 });

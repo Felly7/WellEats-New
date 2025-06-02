@@ -1,4 +1,4 @@
-// app/tabs/index.tsx
+// File: app/tabs/index.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
@@ -17,36 +17,65 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { getMealsByCategory } from '../../services/api';
+import { getAllMeals, Meal } from '../../services/localData';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // make each slide 4/6 of screen width
 const SLIDE_WIDTH = SCREEN_WIDTH * (4 / 6);
 const SIDE_MARGIN = (SCREEN_WIDTH - SLIDE_WIDTH) / 2;
 
-const featuredData = [
-  { id: '1', title: 'Quiche Lorraine', image: require('../../assets/images/featuredcard/1.png') },
-  { id: '2', title: 'Croissant',      image: require('../../assets/images/featuredcard/2.png') },
-  { id: '3', title: 'Ratatouille',    image: require('../../assets/images/featuredcard/3.png') },
-  { id: '4', title: 'Club Sandwich',  image: require('../../assets/images/featuredcard/4.png') },
-];
+// Simple Fisher–Yates shuffle for randomizing meals
+function shuffleArray<T>(array: T[]): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 
 export default function HomeScreen() {
   const isDark = useColorScheme() === 'dark';
 
   // Search
   const [search, setSearch] = useState('');
+  // State to hold exactly three random featured cards
+  const [featuredData, setFeaturedData] = useState<
+    { id: string; title: string; image: any }[]
+  >([]);
 
   // Carousel
   const scrollRef = useRef<ScrollView>(null);
   const [slideIndex, setSlideIndex] = useState(0);
+
+  // On mount: pick three random meals for featured carousel
   useEffect(() => {
+    const allLocalMeals = getAllMeals(); // entire array from JSON
+    const randomThree: Meal[] = shuffleArray(allLocalMeals).slice(0, 4);
+
+    // Map them to the shape our carousel expects:
+    const threeCards = randomThree.map((m) => ({
+      id:    m.id,
+      title: m.name,
+      image: m.thumbnail, // already a require(...) from localData.ts
+    }));
+
+    setFeaturedData(threeCards);
+  }, []);
+
+  // Auto‐advance the carousel every 3 seconds
+  useEffect(() => {
+    if (featuredData.length === 0) return;
     const iv = setInterval(() => {
       const next = (slideIndex + 1) % featuredData.length;
       setSlideIndex(next);
-      scrollRef.current?.scrollTo({ x: next * (SLIDE_WIDTH + 16), animated: true });
+      scrollRef.current?.scrollTo({
+        x: next * (SLIDE_WIDTH + 16),
+        animated: true,
+      });
     }, 3000);
     return () => clearInterval(iv);
-  }, [slideIndex]);
+  }, [slideIndex, featuredData]);
 
   // Meals
   const [loading, setLoading] = useState(true);
@@ -72,7 +101,8 @@ export default function HomeScreen() {
     })();
   }, []);
 
-  if (loading) {
+  // Show loader if category‐based meals still loading OR featuredData isn’t ready
+  if (loading || featuredData.length === 0) {
     return (
       <View style={[styles.loader, isDark && styles.darkBg]}>
         <ActivityIndicator size="large" color={isDark ? '#FFF' : '#000'} />
@@ -80,6 +110,35 @@ export default function HomeScreen() {
     );
   }
 
+  // Render a carousel slide
+  const renderSlide = (
+    item: { id: string; title: string; image: any },
+    idx: number
+  ) => {
+    const active = idx === slideIndex;
+    return (
+      <TouchableOpacity
+        key={item.id}
+        style={[
+          styles.slide,
+          {
+            width: SLIDE_WIDTH,
+            marginHorizontal: 8,
+            transform: [{ scale: active ? 1.05 : 0.9 }],
+          },
+          isDark && styles.slideDark,
+        ]}
+        activeOpacity={0.9}
+        onPress={() => router.push(`/details/${item.id}`)}
+      >
+        <Image source={item.image} style={styles.slideImage} />
+        <View style={styles.slideOverlay} />
+        <Text style={styles.slideTitle}>{item.title}</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  // Render a recipe card for Popular/Trending/Sweet sections
   const renderCard = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={styles.card}
@@ -130,34 +189,25 @@ export default function HomeScreen() {
               paddingHorizontal: SIDE_MARGIN,
             }}
           >
-            {featuredData.map((item, idx) => {
-              const active = idx === slideIndex;
-              return (
-                <TouchableOpacity
-                  key={item.id}
-                  style={[
-                    styles.slide,
-                    {
-                      width: SLIDE_WIDTH,
-                      marginHorizontal: 8,
-                      transform: [{ scale: active ? 1.05 : 0.9 }],
-                    },
-                  ]}
-                  onPress={() => router.push(`/details/${item.id}`)}
-                  activeOpacity={0.9}
-                >
-                  <Image source={item.image} style={styles.slideImage} />
-                  <View style={styles.slideOverlay} />
-                  <Text style={styles.slideTitle}>{item.title}</Text>
-                </TouchableOpacity>
-              );
-            })}
+            {featuredData.map((item, idx) => renderSlide(item, idx))}
           </ScrollView>
           <View style={styles.indicator}>
             <Text style={styles.indicatorText}>
               {slideIndex + 1}/{featuredData.length}
             </Text>
           </View>
+        </View>
+
+        {/* “See All Local Meals” button centered beneath carousel */}
+        <View style={styles.allMealsContainer}>
+          <TouchableOpacity
+            style={[styles.allMealsButton, isDark && styles.allMealsButtonDark]}
+            onPress={() => router.push('/alllocal')}
+          >
+            <Text style={[styles.allMealsText, isDark && styles.allMealsTextDark]}>
+              See All Local Meals
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Sections */}
@@ -246,6 +296,12 @@ const styles = StyleSheet.create({
     position:        'relative',
     borderRadius:    12,
     overflow:        'hidden',
+    backgroundColor: '#FFF',
+    elevation:       4,
+  },
+  slideDark:      {
+    backgroundColor: '#1E1E1E',
+    elevation:       0,
   },
   slideImage:     { width: '100%', height: 180 },
   slideOverlay:   {
@@ -261,15 +317,38 @@ const styles = StyleSheet.create({
     color:      '#FFF',
   },
   indicator:      {
-    position:    'absolute',
-    bottom:      8,
-    right:       16,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    position:          'absolute',
+    bottom:            8,
+    right:             16,
+    backgroundColor:   'rgba(0,0,0,0.5)',
     paddingHorizontal: 8,
     paddingVertical:   2,
     borderRadius:      12,
   },
-  indicatorText: { color: '#FFF', fontSize: 12 },
+  indicatorText:  { color: '#FFF', fontSize: 12 },
+
+  // “See All Local Meals” button styles
+  allMealsContainer: {
+    alignItems:     'center',
+    paddingTop: 10,
+  },
+  allMealsButton: {
+    backgroundColor:  '#6B8E23',
+    paddingVertical:  10,
+    paddingHorizontal: 14,
+    borderRadius:     30,
+  },
+  allMealsButtonDark: {
+    backgroundColor: '#6B8E23',
+  },
+  allMealsText: {
+    color:      '#FFF',
+    fontSize:   13,
+    fontWeight: '600',
+  },
+  allMealsTextDark: {
+    color: '#FFF',
+  },
 
   // Sections
   sectionTitle:   {
