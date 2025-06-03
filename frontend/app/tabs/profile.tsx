@@ -1,4 +1,6 @@
-import React from 'react';
+// File: app/profile.tsx
+
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,12 +8,18 @@ import {
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  Alert,
   useColorScheme,
+  SafeAreaView,
+  Dimensions,
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+
+const USER_INFO_KEY = 'userInfo';
+const windowWidth = Dimensions.get('window').width;
+const windowHeight = Dimensions.get('window').height;
 
 const menuItems = [
   { title: 'User Profile', icon: 'person-outline', route: '/profile' },
@@ -24,25 +32,39 @@ const menuItems = [
 
 export default function ProfileScreen() {
   const isDarkMode = useColorScheme() === 'dark';
+  const [username, setUsername] = useState('Username');
+  const [confirmVisible, setConfirmVisible] = useState(false);
 
-  const handleLogout = async () => {
-    Alert.alert(
-      'Log Out',
-      'Are you sure you want to log out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Yes',
-          onPress: async () => {
-            await SecureStore.deleteItemAsync('USER_TOKEN');
-            router.replace('/login');
-          },
-        },
-      ],
-      { cancelable: false }
-    );
+  // Load username from AsyncStorage on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const json = await AsyncStorage.getItem(USER_INFO_KEY);
+        if (json) {
+          const info = JSON.parse(json);
+          if (info.username) {
+            setUsername(info.username);
+          }
+        }
+      } catch {
+        // ignore any errors
+      }
+    })();
+  }, []);
+
+  // Show overlay instead of default Alert
+  const handleLogout = () => {
+    setConfirmVisible(true);
   };
 
+  // Actual sign‐out: clear token & navigate away
+  const doSignOut = async () => {
+    await SecureStore.deleteItemAsync('USER_TOKEN');
+    setConfirmVisible(false);
+    router.replace('/login');
+  };
+
+  // Menu item taps
   const onPressItem = (route: string) => {
     if (route === 'logout') {
       handleLogout();
@@ -51,16 +73,19 @@ export default function ProfileScreen() {
     }
   };
 
+  // Styles toggling
   const containerStyles = [styles.container, isDarkMode && styles.darkContainer];
   const headerStyles = [styles.header, isDarkMode && styles.darkHeader];
   const titleStyles = [styles.title, isDarkMode && styles.titleDark];
   const profileNameStyles = [styles.profileName, isDarkMode && styles.textDark];
+  const menuItemStyles = [styles.menuItem, isDarkMode && styles.menuItemDark];
+  const menuTextStyles = [styles.menuText, isDarkMode && styles.textDark];
 
   return (
-    <View style={containerStyles}>
+    <SafeAreaView style={containerStyles}>
       {/* Header */}
       <View style={headerStyles}>
-        <Text style={titleStyles}>My Profile</Text>
+        <Text style={titleStyles}>Settings</Text>
       </View>
 
       {/* Profile Info */}
@@ -69,16 +94,41 @@ export default function ProfileScreen() {
           style={styles.profileImage}
           source={require('../../assets/images/profile.jpg')}
         />
-        <Text style={profileNameStyles}>Username</Text>
+        <Text style={profileNameStyles}>{username}</Text>
       </View>
 
-      {/* Menu */}
+      {/* Floating Confirmation Overlay */}
+      {confirmVisible && (
+        <View style={styles.overlayContainer}>
+          <View style={styles.confirmCard}>
+            <Text style={styles.confirmText}>
+              Are you sure you want to log out?
+            </Text>
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={styles.signOutButton}
+                onPress={doSignOut}
+              >
+                <Text style={styles.signOutButtonText}>Sign Out</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setConfirmVisible(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Menu List */}
       <FlatList
         data={menuItems}
         keyExtractor={(item) => item.title}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={[styles.menuItem, isDarkMode && styles.menuItemDark]}
+            style={menuItemStyles}
             onPress={() => onPressItem(item.route)}
           >
             <Ionicons
@@ -86,9 +136,7 @@ export default function ProfileScreen() {
               size={22}
               color={isDarkMode ? '#FFF' : '#5A4A42'}
             />
-            <Text style={[styles.menuText, isDarkMode && styles.textDark]}>
-              {item.title}
-            </Text>
+            <Text style={menuTextStyles}>{item.title}</Text>
             <MaterialIcons
               name="keyboard-arrow-right"
               size={24}
@@ -97,11 +145,12 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         )}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  // === Container & Header ===
   container: {
     flex: 1,
     backgroundColor: '#FDFFF7',
@@ -128,6 +177,8 @@ const styles = StyleSheet.create({
   titleDark: {
     color: '#FFF',
   },
+
+  // === Profile Info ===
   profileSection: {
     alignItems: 'center',
     marginVertical: 20,
@@ -148,6 +199,65 @@ const styles = StyleSheet.create({
   textDark: {
     color: '#FFF',
   },
+
+  // === Confirmation Overlay (floating) ===
+  overlayContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: windowWidth,
+    height: windowHeight,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10, // ensure it floats on top
+  },
+  confirmCard: {
+    width: '80%',
+    backgroundColor: '#FDFFF7',
+    borderRadius: 12,
+    padding: 20,
+    elevation: 5,
+  },
+  confirmText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#000',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  signOutButton: {
+    flex: 1,
+    backgroundColor: '#D62828',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginRight: 8,
+    alignItems: 'center',
+  },
+  signOutButtonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: '#1E90FF',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginLeft: 8,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  // === Menu Items ===
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -165,8 +275,5 @@ const styles = StyleSheet.create({
     color: '#000',
     marginLeft: 10,
     fontWeight: '500',
-  },
-  registerText: {
-    color: '#1E90FF',
   },
 });

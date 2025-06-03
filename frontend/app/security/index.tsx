@@ -115,7 +115,7 @@ export default function SecurityScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#FFF' },
+  container: { flex: 1, padding: 16, backgroundColor: '#FDFFF7' },
   darkBg: { backgroundColor: '#121212' },
   header: { fontSize: 24, fontWeight: 'bold', marginBottom: 24, color: '#000' },
   headerDark: { color: '#FFF' },
