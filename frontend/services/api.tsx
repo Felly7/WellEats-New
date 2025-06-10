@@ -1,8 +1,8 @@
 import axios from 'axios';
                    
 
-export const API_URL = 'https://welleats.onrender.com/api';
-export const baseURL = 'https://welleats.onrender.com';
+export const API_URL = 'http://172.20.10.2:5000/api';
+export const baseURL = 'http://172.20.10.2:5000';
 const FDC_SEARCH_URL     = 'https://api.nal.usda.gov/fdc/v1/foods/search';
 const USDA_API_KEY       = 'q5erpaBFFqJmzGzu9H6zF7sfRoG2pjVoXzdChwdu'; // hard-code key
 const THEMEALDB_BASE     = 'https://www.themealdb.com/api/json/v1/1';
