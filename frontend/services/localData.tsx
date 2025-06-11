@@ -23,6 +23,26 @@ const imageMap: Record<string, any> = {
   'spaghetti.jpg': require('../assets/images/local/spaghetti.jpg'),
   'salad.jpg': require('../assets/images/local/salad.jpg'),
   'springrolls.jpg': require('../assets/images/local/springrolls.jpg'),
+  'waakye2.jpg': require('../assets/images/local/waakye2.jpg'),
+  'grilledtilapia': require('../assets/images/local/grilledtilapia.jpg'),
+  'fufu2.jpg': require('../assets/images/local/fufu.jpg'),
+  'hausakoko.jpg': require('../assets/images/local/hausakoko.jpg'),
+  'bankuandtilapia.png': require('../assets/images/local/bankuandtilapia.png'),
+  'kenkey2.jpg': require('../assets/images/local/kenkey2.jpg'),
+  'fries.jpg': require('../assets/images/local/fries.jpg'),
+  'grilledtilapia.jpg': require('../assets/images/local/grilledtilapia.jpg'),
+  'bankuwithokra.png': require('../assets/images/local/bankuwithokra.png'),
+  'beansstew.jpg': require('../assets/images/local/beansstew.jpg'),
+  'kontomirestew.jpg': require('../assets/images/local/kontomirestew.jpg'),
+  'riceandeggstew.jpg': require('../assets/images/local/riceandeggstew.jpg'),
+  'riceandkontomirestew.jpg': require('../assets/images/local/riceandkontomirestew.jpg'),
+  'sandwich.jpg': require('../assets/images/local/sandwich.jpg'),
+  'stirfriedspaghetti.png': require('../assets/images/local/stirfriedspaghetti.png'),
+  'tomatostew.jpg': require('../assets/images/local/tomatostew.jpg'),
+  'vegetablefruitsalad.jpg': require('../assets/images/local/vegetablefruitsalad.jpg'),
+  'yamandstew.jpg': require('../assets/images/local/yamandstew.jpg'),
+  'palmnutsoup.jpg': require('../assets/images/local/palmnutsoup.jpg'),
+
   // Add more mappings for each image file you have
 };
 

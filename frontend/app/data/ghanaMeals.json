@@ -1,4 +1,3 @@
-
 [
   {
     "id": "jollof",
@@ -22,7 +21,10 @@
       "protein": 8,
       "fat": 10,
       "carbs": 65
-    }
+    },
+    "healthTags": [
+      "moderate-calorie"
+    ]
   },
   {
     "id": "spaghetti",
@@ -43,7 +45,10 @@
       "protein": 10,
       "fat": 8,
       "carbs": 60
-    }
+    },
+    "healthTags": [
+      "moderate-calorie"
+    ]
   },
   {
     "id": "friedrice",
@@ -65,51 +70,503 @@
       "protein": 12,
       "fat": 15,
       "carbs": 70
-    }
-  },
-    {
-        "id": "salad",
-        "name": "Creamy Avocado Salad",
-        "category": "Salad",
-        "thumbnail": "salad.jpg",
-        "ingredients": [
-            "Ripe avocados",
-            "Cherry tomatoes",
-            "Cucumber",
-            "Red onion",
-            "Lemon juice",
-            "Olive oil",
-            "Salt, pepper"
-        ],
-        "instructions": "1. Dice avocados, tomatoes, cucumber, and onion. 2. In a bowl, mix lemon juice, olive oil, salt, and pepper. 3. Toss the vegetables in the dressing until well coated.",
-        "nutrition": {
-            "calories": 300,
-            "protein": 5,
-            "fat": 20,
-            "carbs": 25
-        }
     },
-    {
-        "id": "springrolls",
-        "name": "Spring Rolls",
-        "category": "Appetizer",
-        "thumbnail": "springrolls.jpg",
-        "ingredients": [
-            "Rice paper wrappers",
-            "Shrimp or chicken",
-            "Lettuce",
-            "Carrots",
-            "Cucumber",
-            "Mint leaves",
-            "Peanut sauce"
-        ],
-        "instructions": "1. Soak rice paper in warm water until soft. 2. Place shrimp/chicken, lettuce, carrots, cucumber, and mint on the wrapper. 3. Roll tightly and serve with peanut sauce.",
-        "nutrition": {
-            "calories": 200,
-            "protein": 15,
-            "fat": 5,
-            "carbs": 30
-        }
-    }
-
+    "healthTags": [
+      "high-calorie"
+    ]
+  },
+  {
+    "id": "salad",
+    "name": "Creamy Avocado Salad",
+    "category": "Salad",
+    "thumbnail": "salad.jpg",
+    "ingredients": [
+      "Ripe avocados",
+      "Cherry tomatoes",
+      "Cucumber",
+      "Red onion",
+      "Lemon juice",
+      "Olive oil",
+      "Salt, pepper"
+    ],
+    "instructions": "1. Dice avocados, tomatoes, cucumber, and onion. 2. In a bowl, mix lemon juice, olive oil, salt, and pepper. 3. Toss the vegetables in the dressing until well coated.",
+    "nutrition": {
+      "calories": 300,
+      "protein": 5,
+      "fat": 20,
+      "carbs": 25
+    },
+    "healthTags": [
+      "low-calorie",
+      "vegetarian"
+    ]
+  },
+  {
+    "id": "springrolls",
+    "name": "Spring Rolls",
+    "category": "Appetizer",
+    "thumbnail": "springrolls.jpg",
+    "ingredients": [
+      "Rice paper wrappers",
+      "Shrimp or chicken",
+      "Lettuce",
+      "Carrots",
+      "Cucumber",
+      "Mint leaves",
+      "Peanut sauce"
+    ],
+    "instructions": "1. Soak rice paper in warm water until soft. 2. Place shrimp/chicken, lettuce, carrots, cucumber, and mint on the wrapper. 3. Roll tightly and serve with peanut sauce.",
+    "nutrition": {
+      "calories": 200,
+      "protein": 15,
+      "fat": 5,
+      "carbs": 30
+    },
+    "healthTags": [
+      "low-calorie",
+      "protein-rich"
+    ]
+  },
+  {
+    "id": "fufu",
+    "name": "Fufu with Light Soup",
+    "category": "Main",
+    "thumbnail": "fufu2.jpg",
+    "ingredients": [
+      "Cassava",
+      "Plantain",
+      "Light soup (tomato, pepper, fish/meat)",
+      "Salt"
+    ],
+    "instructions": "1. Boil cassava and plantain until soft. 2. Pound together until smooth and stretchy. 3. Serve with light soup made from blended tomatoes, peppers, and your choice of fish or meat.",
+    "nutrition": {
+      "calories": 500,
+      "protein": 15,
+      "fat": 10,
+      "carbs": 90
+    },
+    "healthTags": [
+      "high-calorie",
+      "hearty"
+    ]
+  },
+  {
+    "id": "banku",
+    "name": "Banku with Grilled Tilapia",
+    "category": "Main",
+    "thumbnail": "bankuandtilapia.png",
+    "ingredients": [
+      "Fermented corn dough",
+      "Tilapia fish",
+      "Pepper sauce",
+      "Vegetable oil"
+    ],
+    "instructions": "1. Mix fermented corn dough with water and cook until smooth. 2. Grill tilapia and serve with pepper sauce. 3. Enjoy banku with grilled tilapia and sauce.",
+    "nutrition": {
+      "calories": 600,
+      "protein": 25,
+      "fat": 15,
+      "carbs": 80
+    },
+    "healthTags": [
+      "high-calorie",
+      "hearty"
+    ] 
+  },
+  {
+    "id": "kenkey",
+    "name": "Kenkey with Pepper Sauce",
+    "category": "Main",
+    "thumbnail": "kenkey2.jpg",
+    "ingredients": [
+      "Fermented corn dough",
+      "Pepper sauce",
+      "Fish or meat (optional)"
+    ],
+    "instructions": "1. Prepare fermented corn dough and wrap in leaves. 2. Boil until firm. 3. Serve with pepper sauce and optional fish or meat.",
+    "nutrition": {
+      "calories": 550,
+      "protein": 20,
+      "fat": 10,
+      "carbs": 90
+    },
+    "healthTags": [
+      "high-calorie",
+      "hearty"
+    ]
+  },
+  {
+    "id": "fries",
+    "name": "Ghanaian Fried Yam",
+    "category": "Side",
+    "thumbnail": "fries.jpg",
+    "ingredients": [
+      "Yam",
+      "Vegetable oil",
+      "Salt"
+    ],
+    "instructions": "1. Peel and cut yam into thick slices. 2. Heat oil in a pan and fry yam until golden brown. 3. Drain on paper towels and sprinkle with salt.",
+    "nutrition": {
+      "calories": 300,
+      "protein": 4,
+      "fat": 15,
+      "carbs": 40
+    },
+    "healthTags": [
+      "moderate-calorie",
+      "vegetarian"
+    ]
+  },
+  {
+    "id": "hausakoko",
+    "name": "Hausakoko",
+    "category": "Snack",
+    "thumbnail": "hausakoko.jpg",
+    "ingredients": [
+      "Roasted corn",
+      "Groundnuts (peanuts)",
+      "Sugar (optional)"
+    ],
+    "instructions": "1. Roast corn until golden brown. 2. Mix with groundnuts and sugar if desired. 3. Serve as a snack.",
+    "nutrition": {
+      "calories": 250,
+      "protein": 8,
+      "fat": 10,
+      "carbs": 35
+    },
+    "healthTags": [
+      "low-calorie",
+      "snack"
+    ]
+  },
+  {
+    "id": "waakye",
+    "name": "Waakye",
+    "category": "Main",
+    "thumbnail": "waakye2.jpg",
+    "ingredients": [
+      "Rice",
+      "Beans",
+      "Waakye leaves (for color)",
+      "Stew (tomato, pepper, meat/fish)",
+      "Fried plantain (optional)"
+    ],
+    "instructions": "1. Cook rice and beans together with waakye leaves for color. 2. Prepare stew with tomatoes, peppers, and your choice of meat or fish. 3. Serve waakye with stew and fried plantain if desired.",
+    "nutrition": {
+      "calories": 500,
+      "protein": 15,
+      "fat": 10,
+      "carbs": 85
+    },
+    "healthTags": [
+      "high-calorie",
+      "hearty"
+    ]
+  },
+  {
+    "id": "grilledtilapia",
+    "name": "Grilled Tilapia with Spicy Sauce",
+    "category": "Side",
+    "thumbnail": "grilledtilapia.jpg",
+    "ingredients": [
+      "Tilapia fish",
+      "Spicy pepper sauce",
+      "Lemon juice",
+      "Vegetable oil",
+      "Salt"
+    ],  
+    "instructions": "1. Marinate tilapia with lemon juice, salt, and oil. 2. Grill until cooked through. 3. Serve with spicy pepper sauce.",
+    "nutrition": {
+      "calories": 250,
+      "protein": 30,
+      "fat": 10,
+      "carbs": 5
+    },
+    "healthTags": [
+      "low-calorie",
+      "high-protein"
+    ]
+  },
+  {
+    "id": "bankuandokra",
+    "name": "Banku with Okra Stew",
+    "category": "Main",
+    "thumbnail": "bankuwithokra.png",
+    "ingredients": [
+      "Fermented corn dough",
+      "Okra",
+      "Tomatoes",
+      "Onions",
+      "Pepper",
+      "Fish or meat (optional)",
+      "Salt"
+    ],
+    "instructions": "1. Prepare banku by mixing fermented corn dough with water and cooking until smooth. 2. For the stew, cook okra with tomatoes, onions, and pepper; add fish or meat if desired. 3. Serve banku with okra stew on the side.",
+    "nutrition": {
+      "calories": 550,
+      "protein": 20,
+      "fat": 10,
+      "carbs": 90
+    },
+    "healthTags": [
+      "high-calorie",
+      "hearty"
+    ]
+  },
+  {
+    "id": "beansstew",
+    "name": "Beans Stew",
+    "category": "Stew",
+    "thumbnail": "beansstew.jpg",
+    "ingredients": [
+      "Beans (black-eyed peas or kidney beans)",
+      "Tomatoes",
+      "Onions",
+      "Pepper",
+      "Vegetable oil",
+      "Salt, spices"
+    ],
+    "instructions": "1. Cook beans until tender. 2. In a separate pot, fry onions and tomatoes with spices. 3. Add cooked beans to the stew and simmer for 20 minutes.",
+    "nutrition": {
+      "calories": 400,
+      "protein": 15,
+      "fat": 10,
+      "carbs": 60
+    },
+    "healthTags": [
+      "moderate-calorie",
+      "vegetarian"
+    ]
+  },
+  {
+    "id": "kontomire",
+    "name": "Kontomire Stew",
+    "category": "Stew",
+    "thumbnail": "kontomirestew.jpg",
+    "ingredients": [
+      "Kontomire (cocoyam leaves)",
+      "Palm oil",
+      "Onions",
+      "Tomatoes",
+      "Pepper",
+      "Fish or meat (optional)",
+      "Salt"
+    ],
+    "instructions": "1. Wash and chop kontomire leaves. 2. In a pot, heat palm oil and fry onions, tomatoes, and pepper. 3. Add kontomire leaves and cook until tender; add fish or meat if desired.",
+    "nutrition": {
+      "calories": 300,
+      "protein": 10,
+      "fat": 15,
+      "carbs": 30
+    },
+    "healthTags": [
+      "low-calorie",
+      "vegetarian"
+    ]
+  },
+  {
+    "id": "palmnutsoup",
+    "name": "Palm Nut Soup",
+    "category": "Soup",
+    "thumbnail": "palmnutsoup.jpg",
+    "ingredients": [
+      "Palm nuts",
+      "Meat (beef, chicken, or fish)",
+      "Onions",
+      "Pepper",
+      "Salt, spices"
+    ],
+    "instructions": "1. Boil palm nuts until soft, then blend to extract the oil. 2. In a pot, cook meat with onions and spices. 3. Add blended palm nut oil and simmer until thickened.",
+    "nutrition": {
+      "calories": 450,
+      "protein": 20,
+      "fat": 25,
+      "carbs": 30
+    },
+    "healthTags": [
+      "high-calorie",
+      "hearty"
+    ]
+  },
+  {
+    "id": "riceandeggstew",
+    "name": "Rice and Egg Stew",
+    "category": "Main",
+    "thumbnail": "riceandeggstew.jpg",
+    "ingredients": [
+      "Rice",
+      "Eggs",
+      "Tomatoes",
+      "Onions",
+      "Pepper",
+      "Vegetable oil",
+      "Salt, spices"
+    ],
+    "instructions": "1. Cook rice until tender. 2. In a pan, fry onions and tomatoes with spices. 3. Add beaten eggs and stir until cooked; serve over rice.",
+    "nutrition": {
+      "calories": 400,
+      "protein": 15,
+      "fat": 10,
+      "carbs": 60
+    },
+    "healthTags": [
+      "moderate-calorie",
+      "high-protein"
+    ]
+  },
+  {
+    "id": "riceandkontomire",
+    "name": "Rice and Kontomire Stew",
+    "category": "Main",
+    "thumbnail": "riceandkontomirestew.jpg",
+    "ingredients": [
+      "Rice",
+      "Kontomire (cocoyam leaves)",
+      "Palm oil",
+      "Onions",
+      "Tomatoes",
+      "Pepper",
+      "Salt"
+    ],
+    "instructions": "1. Cook rice until tender. 2. In a pot, heat palm oil and fry onions, tomatoes, and pepper. 3. Add chopped kontomire leaves and cook until tender; serve over rice.",
+    "nutrition": {
+      "calories": 450,
+      "protein": 15,
+      "fat": 15,
+      "carbs": 60
+    },
+    "healthTags": [
+      "moderate-calorie",
+      "vegetarian"
+    ]
+  },
+  {
+    "id": "sandwich",
+    "name": "Ghanaian Sandwich",
+    "category": "Snack",
+    "thumbnail": "sandwich.jpg",
+    "ingredients": [
+      "Bread",
+      "Eggs",
+      "Tomatoes",
+      "Onions",
+      "Lettuce",
+      "Mayonnaise",
+      "Salt, pepper"
+    ],
+    "instructions": "1. Boil eggs and slice them. 2. Toast bread slices. 3. Layer eggs, tomatoes, onions, and lettuce on one slice; spread mayonnaise on another. 4. Combine slices and cut in half.",
+    "nutrition": {
+      "calories": 350,
+      "protein": 12,
+      "fat": 15,
+      "carbs": 40
+    },
+    "healthTags": [
+      "moderate-calorie",
+      "high-protein"
+    ]
+  },
+  {
+    "id": "stirfriedspaghetti",
+    "name": "Stir-Fried Spaghetti",
+    "category": "Main",
+    "thumbnail": "stirfriedspaghetti.png",
+    "ingredients": [
+      "Spaghetti",
+      "Mixed vegetables (carrots, peas, bell peppers)",
+      "Soy sauce",
+      "Garlic",
+      "Ginger",
+      "Vegetable oil",
+      "Salt, pepper"
+    ],
+    "instructions": "1. Cook spaghetti until al dente. 2. In a pan, heat oil and stir-fry garlic, ginger, and vegetables. 3. Add cooked spaghetti and soy sauce; stir until well combined.",
+    "nutrition": {
+      "calories": 400,
+      "protein": 10,
+      "fat": 10,
+      "carbs": 70
+    },
+    "healthTags": [
+      "moderate-calorie",
+      "vegetarian"
+    ]
+  },
+  {
+    "id":"tomatostew",
+    "name": "Tomato Stew",
+    "category": "Stew",
+    "thumbnail": "tomatostew.jpg",
+    "ingredients": [
+      "Tomatoes",
+      "Onions",
+      "Pepper",
+      "Vegetable oil",
+      "Salt, spices"
+    ],
+    "instructions": "1. Blend tomatoes, onions, and pepper. 2. In a pot, heat oil and fry the blended mixture until thickened. 3. Season with salt and spices; serve with rice or bread.",
+    "nutrition": {
+      "calories": 200,
+      "protein": 5,
+      "fat": 10,
+      "carbs": 25
+    },
+    "healthTags": [
+      "low-calorie",
+      "vegetarian"
+    ]
+  },
+  {
+    "id": "vegetablefruitsalad",
+    "name": "Vegetable and Fruit Salad", 
+    "category": "Salad",
+    "thumbnail": "vegetablefruitsalad.jpg",
+    "ingredients": [
+      "Mixed greens (lettuce, spinach)",
+      "Cucumber",
+      "Tomatoes",
+      "Carrots",
+      "Avocado",
+      "Apple",
+      "Lemon juice",
+      "Olive oil",
+      "Salt, pepper"
+    ],
+    "instructions": "1. Chop all vegetables and fruits into bite-sized pieces. 2. In a bowl, mix lemon juice, olive oil, salt, and pepper. 3. Toss the salad with the dressing until well coated.",
+    "nutrition": {
+      "calories": 150,
+      "protein": 3,
+      "fat": 10,
+      "carbs": 15
+    },
+    "healthTags": [
+      "low-calorie",
+      "vegetarian"
+    ]
+  },
+  {
+    "id": "yamandstew",
+    "name": "Yam and Stew",
+    "category": "Main",
+    "thumbnail": "yamandstew.jpg",
+    "ingredients": [
+      "Yam",
+      "Tomatoes",
+      "Onions",
+      "Pepper",
+      "Vegetable oil",
+      "Salt, spices"
+    ],
+    "instructions": "1. Peel and cut yam into chunks; boil until tender. 2. In a pot, heat oil and fry onions, tomatoes, and pepper until thickened. 3. Serve yam with the stew on top.",
+    "nutrition": {
+      "calories": 400,
+      "protein": 5,
+      "fat": 10,
+      "carbs": 70
+    },
+    "healthTags": [
+      "moderate-calorie",
+      "vegetarian"
+    ]
+  }
 ]
