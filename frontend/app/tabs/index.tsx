@@ -1,4 +1,5 @@
 // File: app/tabs/index.tsx
+
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
@@ -14,58 +15,82 @@ import {
   Alert,
   Dimensions,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { getMealsByCategory } from '../../services/api';
-import { getAllMeals, Meal } from '../../services/localData';
+
+import { getNutritionByIngredient } from '../../services/api';
+import { getAllMeals, Meal as LocalMeal } from '../../services/localData';
+
+type ApiMeal = { idMeal: string; strMeal: string; strMealThumb: string };
+type Suggestion = {
+  id: string;
+  title: string;
+  image: any;
+  local: boolean;
+};
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-// make each slide 4/6 of screen width
 const SLIDE_WIDTH = SCREEN_WIDTH * (4 / 6);
 const SIDE_MARGIN = (SCREEN_WIDTH - SLIDE_WIDTH) / 2;
-
-// Simple Fisher–Yates shuffle for randomizing meals
-function shuffleArray<T>(array: T[]): T[] {
-  const arr = [...array];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
 
 export default function HomeScreen() {
   const isDark = useColorScheme() === 'dark';
 
-  // Search
+  // Search + suggestions
   const [search, setSearch] = useState('');
-  // State to hold exactly three random featured cards
-  const [featuredData, setFeaturedData] = useState<
-    { id: string; title: string; image: any }[]
-  >([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [allLocal, setAllLocal] = useState<LocalMeal[]>([]);
 
   // Carousel
+  const [featuredData, setFeaturedData] = useState<{ id: string; title: string; image: any }[]>([]);
   const scrollRef = useRef<ScrollView>(null);
   const [slideIndex, setSlideIndex] = useState(0);
 
-  // On mount: pick three random meals for featured carousel
+  // Categories
+  const [loading, setLoading] = useState(true);
+  const [breakfastMeals, setBreakfastMeals]     = useState<ApiMeal[]>([]);
+  const [recommendedMeals, setRecommendedMeals] = useState<ApiMeal[]>([]);
+  const [exploreMeals, setExploreMeals]         = useState<ApiMeal[]>([]);
+
+  // 1️⃣ Local + carousel
   useEffect(() => {
-    const allLocalMeals = getAllMeals(); // entire array from JSON
-    const randomThree: Meal[] = shuffleArray(allLocalMeals).slice(0, 4);
-
-    // Map them to the shape our carousel expects:
-    const threeCards = randomThree.map((m) => ({
-      id:    m.id,
-      title: m.name,
-      image: m.thumbnail, // already a require(...) from localData.ts
-    }));
-
-    setFeaturedData(threeCards);
+    const locals = getAllMeals();
+    setAllLocal(locals);
+    const pick = locals
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 4)
+      .map(m => ({ id: m.id, title: m.name, image: m.thumbnail }));
+    setFeaturedData(pick);
   }, []);
 
-  // Auto‐advance the carousel every 3 seconds
+  // 2️⃣ Fetch API categories
   useEffect(() => {
-    if (featuredData.length === 0) return;
+    (async () => {
+      try {
+        const [bRes, rRes, eRes] = await Promise.all([
+          fetch('https://www.themealdb.com/api/json/v1/1/filter.php?c=Breakfast'),
+          fetch('https://www.themealdb.com/api/json/v1/1/filter.php?c=Seafood'),
+          fetch('https://www.themealdb.com/api/json/v1/1/filter.php?c=Dessert'),
+        ]);
+        const bJson = await bRes.json();
+        const rJson = await rRes.json();
+        const eJson = await eRes.json();
+        setBreakfastMeals(bJson.meals || []);
+        setRecommendedMeals(rJson.meals || []);
+        setExploreMeals(eJson.meals || []);
+      } catch (err) {
+        console.error(err);
+        Alert.alert('Error', 'Could not load meals.');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  // 3️⃣ Carousel auto-advance
+  useEffect(() => {
+    if (!featuredData.length) return;
     const iv = setInterval(() => {
       const next = (slideIndex + 1) % featuredData.length;
       setSlideIndex(next);
@@ -77,32 +102,39 @@ export default function HomeScreen() {
     return () => clearInterval(iv);
   }, [slideIndex, featuredData]);
 
-  // Meals
-  const [loading, setLoading] = useState(true);
-  const [breakfastMeals, setBreakfastMeals]     = useState<any[]>([]);
-  const [recommendedMeals, setRecommendedMeals] = useState<any[]>([]);
-  const [exploreMeals, setExploreMeals]         = useState<any[]>([]);
-
+  // 4️⃣ Suggestions logic
   useEffect(() => {
+    const q = search.trim();
+    if (!q) {
+      setSuggestions([]);
+      return;
+    }
     (async () => {
+      // local matches
+      const locs = allLocal
+        .filter(m => m.name.toLowerCase().includes(q.toLowerCase()))
+        .map(m => ({ id: m.id, title: m.name, image: m.thumbnail, local: true }));
+
+      // API search
       try {
-        const b = await getMealsByCategory('Breakfast');
-        const r = await getMealsByCategory('Seafood');
-        const e = await getMealsByCategory('Dessert');
-        setBreakfastMeals(b.meals || []);
-        setRecommendedMeals(r.meals || []);
-        setExploreMeals(e.meals || []);
-      } catch (err) {
-        console.error(err);
-        Alert.alert('Error', 'Could not load meals.');
-      } finally {
-        setLoading(false);
+        const res = await fetch(
+          `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(q)}`
+        );
+        const json = await res.json();
+        const apis: Suggestion[] = (json.meals || []).map((m: ApiMeal) => ({
+          id: m.idMeal,
+          title: m.strMeal,
+          image: { uri: m.strMealThumb },
+          local: false,
+        }));
+        setSuggestions([...locs, ...apis].slice(0, 6));
+      } catch {
+        setSuggestions(locs.slice(0, 6));
       }
     })();
-  }, []);
+  }, [search, allLocal]);
 
-  // Show loader if category‐based meals still loading OR featuredData isn’t ready
-  if (loading || featuredData.length === 0) {
+  if (loading) {
     return (
       <View style={[styles.loader, isDark && styles.darkBg]}>
         <ActivityIndicator size="large" color={isDark ? '#FFF' : '#000'} />
@@ -110,22 +142,14 @@ export default function HomeScreen() {
     );
   }
 
-  // Render a carousel slide
-  const renderSlide = (
-    item: { id: string; title: string; image: any },
-    idx: number
-  ) => {
+  const renderSlide = (item: any, idx: number) => {
     const active = idx === slideIndex;
     return (
       <TouchableOpacity
         key={item.id}
         style={[
           styles.slide,
-          {
-            width: SLIDE_WIDTH,
-            marginHorizontal: 8,
-            transform: [{ scale: active ? 1.05 : 0.9 }],
-          },
+          { width: SLIDE_WIDTH, marginHorizontal: 8, transform: [{ scale: active ? 1.05 : 0.9 }] },
           isDark && styles.slideDark,
         ]}
         activeOpacity={0.9}
@@ -138,12 +162,8 @@ export default function HomeScreen() {
     );
   };
 
-  // Render a recipe card for Popular/Trending/Sweet sections
   const renderCard = ({ item }: { item: any }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => router.push(`/details/${item.idMeal}`)}
-    >
+    <TouchableOpacity style={styles.card} onPress={() => router.push(`/details/${item.idMeal}`)}>
       <Image source={{ uri: item.strMealThumb }} style={styles.image} />
       <View style={styles.overlay} />
       <Text style={styles.cardTitle}>{item.strMeal}</Text>
@@ -151,7 +171,16 @@ export default function HomeScreen() {
   );
 
   return (
-    <View style={[styles.container, isDark && styles.darkBg]}>
+    <View
+      style={[styles.container, isDark && styles.darkBg]}
+      // any tap on this view (outside dropdown) will clear suggestions:
+      onStartShouldSetResponder={() => {
+        if (suggestions.length) {
+          setSuggestions([]);
+        }
+        return false;
+      }}
+    >
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.appName}>WellEats</Text>
@@ -161,7 +190,7 @@ export default function HomeScreen() {
       </View>
 
       {/* Search Bar */}
-      <View style={[styles.searchBar, isDark && styles.searchBarDark]}>
+      <View style={[styles.searchBar, isDark && styles.searchBarDark, { zIndex: 20 }]}>
         <Ionicons name="search-outline" size={20} color={isDark ? '#AAA' : '#666'} />
         <TextInput
           style={[styles.searchInput, isDark && styles.searchInputDark]}
@@ -172,11 +201,36 @@ export default function HomeScreen() {
         />
       </View>
 
-      {/* Everything below scrolls */}
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120 }}
-      >
+      {/* Blur under dropdown */}
+      {suggestions.length > 0 && (
+        <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+      )}
+
+      {/* Suggestions Dropdown */}
+      {suggestions.length > 0 && (
+        <View style={[styles.dropdown, isDark && styles.dropdownDark]}>
+          <FlatList
+            data={suggestions}
+            keyExtractor={i => (i.local ? `L-${i.id}` : `A-${i.id}`)}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.dropdownRow}
+                onPress={() => {
+                  setSuggestions([]);
+                  router.push(`/details/${item.id}`);
+                }}
+              >
+                <Image source={item.image} style={styles.dropdownThumb} />
+                <Text style={[styles.dropdownText, isDark && styles.dropdownTextDark]}>
+                  {item.title}
+                </Text>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+      )}
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
         {/* Carousel */}
         <View>
           <ScrollView
@@ -185,11 +239,9 @@ export default function HomeScreen() {
             snapToInterval={SLIDE_WIDTH + 16}
             decelerationRate="fast"
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{
-              paddingHorizontal: SIDE_MARGIN,
-            }}
+            contentContainerStyle={{ paddingHorizontal: SIDE_MARGIN }}
           >
-            {featuredData.map((item, idx) => renderSlide(item, idx))}
+            {featuredData.map(renderSlide)}
           </ScrollView>
           <View style={styles.indicator}>
             <Text style={styles.indicatorText}>
@@ -198,7 +250,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* “See All Local Meals” button centered beneath carousel */}
+        {/* See All Local Meals */}
         <View style={styles.allMealsContainer}>
           <TouchableOpacity
             style={[styles.allMealsButton, isDark && styles.allMealsButtonDark]}
@@ -252,7 +304,6 @@ const styles = StyleSheet.create({
   container:      { flex: 1, backgroundColor: '#FFF', paddingTop: 40 },
   darkBg:         { backgroundColor: '#121212' },
   loader:         { flex: 1, justifyContent: 'center', alignItems: 'center' },
-
   header:         {
     flexDirection:  'row',
     justifyContent: 'space-between',
@@ -261,7 +312,6 @@ const styles = StyleSheet.create({
     padding:        15,
   },
   appName:        { fontSize: 22, fontWeight: 'bold', color: 'white' },
-
   // Search
   searchBar:      {
     flexDirection:    'row',
@@ -273,7 +323,6 @@ const styles = StyleSheet.create({
     borderRadius:     30,
     height:           44,
     marginTop:        10,
-    // glow
     shadowColor:   '#6B8E23',
     shadowOffset:  { width: 0, height: 0 },
     shadowOpacity: 0.8,
@@ -290,18 +339,40 @@ const styles = StyleSheet.create({
   },
   searchInput:    { flex: 1, marginLeft: 8, fontSize: 16, color: '#000' },
   searchInputDark:{ color: '#FFF' },
-
+  // dropdown
+  dropdown:       {
+    position: 'absolute',
+    top: 150,
+    left: 16,
+    right: 16,
+    backgroundColor: '#FFF',
+    borderRadius: 8,
+    maxHeight: 240,
+    zIndex: 10,
+    elevation: 6,
+  },
+  dropdownDark:   { backgroundColor: '#1E1E1E' },
+  dropdownRow:    {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: '#CCC',
+  },
+  dropdownThumb:  { width: 32, height: 32, borderRadius: 4, marginRight: 12 },
+  dropdownText:   { fontSize: 14, color: '#000' },
+  dropdownTextDark:{ color: '#FFF' },
   // Carousel
   slide:          {
-    position:        'relative',
-    borderRadius:    12,
-    overflow:        'hidden',
+    position:     'relative',
+    borderRadius: 12,
+    overflow:     'hidden',
     backgroundColor: '#FFF',
-    elevation:       4,
+    elevation:   4,
   },
   slideDark:      {
     backgroundColor: '#1E1E1E',
-    elevation:       0,
+    elevation:     0,
   },
   slideImage:     { width: '100%', height: 180 },
   slideOverlay:   {
@@ -317,47 +388,33 @@ const styles = StyleSheet.create({
     color:      '#FFF',
   },
   indicator:      {
-    position:          'absolute',
-    bottom:            8,
-    right:             16,
-    backgroundColor:   'rgba(0,0,0,0.5)',
+    position:  'absolute',
+    bottom:    8,
+    right:     16,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     paddingHorizontal: 8,
     paddingVertical:   2,
     borderRadius:      12,
   },
   indicatorText:  { color: '#FFF', fontSize: 12 },
-
-  // “See All Local Meals” button styles
-  allMealsContainer: {
-    alignItems:     'center',
-    paddingTop: 10,
-  },
-  allMealsButton: {
+  // See All Local Meals
+  allMealsContainer: { alignItems: 'center', paddingTop: 10 },
+  allMealsButton:    {
     backgroundColor:  '#6B8E23',
     paddingVertical:  10,
-    paddingHorizontal: 14,
+    paddingHorizontal:14,
     borderRadius:     30,
   },
-  allMealsButtonDark: {
-    backgroundColor: '#6B8E23',
-  },
-  allMealsText: {
-    color:      '#FFF',
-    fontSize:   13,
-    fontWeight: '600',
-  },
-  allMealsTextDark: {
-    color: '#FFF',
-  },
-
+  allMealsButtonDark:{ backgroundColor: '#6B8E23' },
+  allMealsText:      { color: '#FFF', fontSize: 13, fontWeight: '600' },
+  allMealsTextDark:  { color: '#FFF' },
   // Sections
   sectionTitle:   {
-    fontSize:     18,
-    fontWeight:   'bold',
-    marginLeft:   10,
-    marginTop:    20,
+    fontSize:   18,
+    fontWeight: 'bold',
+    marginLeft: 10,
+    marginTop:  20,
   },
-
   // Recipe cards
   card:           {
     margin:       10,
