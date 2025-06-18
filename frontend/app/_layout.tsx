@@ -7,7 +7,6 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { AuthProvider, useAuth } from '@/src/context/AuthContext';
 
 // Split into two components so we can call useAuth() *inside* the provider
 function InnerLayout() {
@@ -15,7 +14,6 @@ function InnerLayout() {
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
-  const { userToken, isLoading } = useAuth();
 
   // hide splash as before
   useEffect(() => {
@@ -23,13 +21,21 @@ function InnerLayout() {
   }, [loaded]);
 
   // wait for fonts AND auth state
-  if (!loaded || isLoading) return null;
+  if (!loaded) return null;
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{ headerShown: false }}>
         {/* gate initial screen based on token */}
-        <Stack.Screen name={userToken ? 'tabs' : 'login'} />
+        <Stack.Screen name='tabs' />
+        <Stack.Screen name='admin' />
+        <Stack.Screen name='login' />
+        <Stack.Screen name='profile' />
+        <Stack.Screen name='register' />
+        <Stack.Screen name='index' />
+        <Stack.Screen name='allocal' />
+        <Stack.Screen name='notifications' />
+        <Stack.Screen name='meals' />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
