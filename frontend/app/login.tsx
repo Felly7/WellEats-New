@@ -16,6 +16,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { loginUser } from '@/services/api';
 import { useAuth } from '@/src/context/AuthContext';
+import * as SecureStore from 'expo-secure-store';
+
 
 export default function LoginScreen() {
   const [email, setEmail]         = useState('');
@@ -85,9 +87,14 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const data = await loginUser(email, password);
-      if (data.message === 'Login successful' && data.token) {
-        await login(data.token);
-        navigation.replace('tabs');
+      if (data.message === 'Login successful') {
+        await SecureStore.setItemAsync('userId', data.token);
+        
+        if(data.user.role == 'admin') {
+          router.push('/admin')
+        } else {
+          router.push('/tabs');
+        }
       } else {
         Alert.alert('Login failed', data.message || 'Invalid credentials');
       }

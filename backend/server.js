@@ -25,10 +25,10 @@ app.use('/api/health-profile', healthProfileRoutes);
 app.use('/api/foods', foodsRouter);
 
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log('Server running on port ${PORT}');
-  console.log('Foods endpoint available at http://localhost:${PORT}/api/foods');
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Foods endpoint available at http://localhost:${PORT}/api/foods`);
 });
