@@ -15,7 +15,6 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { loginUser } from '@/services/api';
-import { useAuth } from '@/src/context/AuthContext';
 import * as SecureStore from 'expo-secure-store';
 
 
@@ -28,7 +27,6 @@ export default function LoginScreen() {
   const [bioType, setBioType]             = useState<string | null>(null);
 
   const navigation = router;
-  const { login } = useAuth();
 
   // Detect biometric hardware and enrollment
   useEffect(() => {
@@ -69,7 +67,7 @@ export default function LoginScreen() {
         const token = await AsyncStorage.getItem('USER_TOKEN');
         if (token) {
           await login(token);
-          navigation.replace('tabs');
+          navigation.replace('/tabs');
         } else {
           Alert.alert('No Credentials', 'Please login manually first.');
         }
@@ -87,6 +85,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const data = await loginUser(email, password);
+      console.log(data)
       if (data.message === 'Login successful') {
         await SecureStore.setItemAsync('userId', data.token);
         

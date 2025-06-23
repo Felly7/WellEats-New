@@ -1,4 +1,3 @@
-// app/_layout.tsx  (or wherever your RootLayout lives)
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -39,13 +38,5 @@ function InnerLayout() {
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
-  );
-}
-
-export default function RootLayout() {
-  return (
-    <AuthProvider>
-      <InnerLayout />
-    </AuthProvider>
   );
 }

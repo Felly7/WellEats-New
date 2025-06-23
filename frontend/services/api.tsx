@@ -1,8 +1,10 @@
 import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
+
                    
 
-export const API_URL = 'http://172.20.10.3:5000/api';
-export const baseURL = 'http://172.20.10.3:5000';
+export const API_URL = 'http://172.20.10.2:5000/api';
+export const baseURL = 'http://172.20.10.2:5000';
 const FDC_SEARCH_URL     = 'https://api.nal.usda.gov/fdc/v1/foods/search';
 const USDA_API_KEY       = 'q5erpaBFFqJmzGzu9H6zF7sfRoG2pjVoXzdChwdu'; // hard-code key
 const THEMEALDB_BASE     = 'https://www.themealdb.com/api/json/v1/1';
@@ -126,3 +128,48 @@ export async function getAllergenFlags(ingredient: string): Promise<string[]> {
   const prod = json.products?.[0];
   return prod?.allergens_tags || [];
 }
+
+
+export const getUserData = async (token: string) => {
+  try {
+    const response = await api.get('/auth/me', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      // Backend returned a response with an error payload
+      console.error('Server Error:', error.response.data);
+    } else {
+      // Something else went wrong (network, timeout, etc.)
+      console.error('Error fetching user data:', error.message);
+    }
+    throw error;
+  }
+};
+
+// In services/api.js
+export const getAdminUsers = async () => {
+  const token = await SecureStore.getItemAsync('userId');
+  const response = await axios.get('/api/admin/users', {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return response.data;
+};
+
+export const updateUserRole = async (userId: string, newRole : string) => {
+  const token = await SecureStore.getItemAsync('userId');
+  await axios.put(`/api/admin/users/${userId}/role`, 
+    { role: newRole },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+};
+
+export const deleteUser = async (userId: string) => {
+  const token = await SecureStore.getItemAsync('userId');
+  await axios.delete(`/api/admin/users/${userId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+};
