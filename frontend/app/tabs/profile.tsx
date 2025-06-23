@@ -11,11 +11,12 @@ import {
   useColorScheme,
   SafeAreaView,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+import { getUserData } from '@/services/api';
 
 const USER_INFO_KEY = 'userInfo';
 const windowWidth = Dimensions.get('window').width;
@@ -27,31 +28,39 @@ const menuItems = [
   { title: 'Security & Privacy', icon: 'shield-checkmark-outline', route: '/security' },
   { title: 'Notifications', icon: 'notifications-outline', route: '/notifications' },
   { title: 'Need help?', icon: 'help-circle-outline', route: '/help' },
-  { title: 'Sign out', icon: 'log-out-outline', route: 'logout' },
+  { title: 'Sign out', icon: 'log-out-outline', route: '/logout' },
 ];
 
 export default function ProfileScreen() {
   const isDarkMode = useColorScheme() === 'dark';
-  const [username, setUsername] = useState('Username');
+  const [user, setUser] = useState([]);
   const [confirmVisible, setConfirmVisible] = useState(false);
 
   // Load username from AsyncStorage on mount
   useEffect(() => {
-    (async () => {
+    const fetchUserDetails = async () => {
       try {
-        const json = await AsyncStorage.getItem(USER_INFO_KEY);
-        if (json) {
-          const info = JSON.parse(json);
-          if (info.username) {
-            setUsername(info.username);
-          }
-        }
-      } catch {
-        // ignore any errors
-      }
-    })();
-  }, []);
+        const token = await SecureStore.getItemAsync('userId');
+        if (!token) throw new Error('No auth token found');
 
+        const response = await getUserData(token);
+        console.log('Fetched user details:', response);
+
+        setUser({
+          name: response.name,
+          email: response.email,
+        });
+      } catch (error) {
+        console.warn('Failed to fetch user details:', error);
+        Alert.alert(
+          'Error',
+          'Unable to load user details. Please try again later.'
+        );
+      } 
+    };
+
+    fetchUserDetails();
+  }, []);
   // Show overlay instead of default Alert
   const handleLogout = () => {
     setConfirmVisible(true);
@@ -59,14 +68,14 @@ export default function ProfileScreen() {
 
   // Actual sign‐out: clear token & navigate away
   const doSignOut = async () => {
-    await SecureStore.deleteItemAsync('USER_TOKEN');
+    await SecureStore.deleteItemAsync('userId');
     setConfirmVisible(false);
     router.replace('/login');
   };
 
   // Menu item taps
   const onPressItem = (route: string) => {
-    if (route === 'logout') {
+    if (route === '/logout') {
       handleLogout();
     } else {
       router.push(route);
