@@ -4,7 +4,27 @@ const { Food }    = require('../models/Food');
 const { Product}  = require('../models/Product');
 
 
-  const router = Router();
+const router = Router();
+
+// Increment view count for a food item
+router.put('/:id/view', async (req, res) => {
+  try {
+    const updated = await Food.findByIdAndUpdate(
+      req.params.id,
+      { $inc: { views: 1 } },
+      { new: true }
+    ).select('description views');
+
+    if (!updated) {
+      return res.status(404).json({ message: 'Food not found' });
+    }
+    return res.json(updated);
+  } catch (err) {
+    console.error('Error incrementing food view count:', err);
+    return res.status(500).json({ message: 'Could not update view count' });
+  }
+});
+
 
 router.get('/', async (req, res) => {
   const { allergies = [], conditions = [] } = req.query;

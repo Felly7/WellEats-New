@@ -1,39 +1,25 @@
 // File: app/profile.tsx
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
-  Image,
-  StyleSheet,
   TouchableOpacity,
-  FlatList,
-  Alert,
+  StyleSheet,
   useColorScheme,
   SafeAreaView,
+  FlatList,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { getUserData } from '@/services/api';
 
-type BasicInfo = {
-  fullName: string;
-  dateOfBirth: string;
-  gender: string;
-  heightCm: string;
-  weightKg: string;
-};
-type HealthGoals = {
-  goalType: 'Lose' | 'Maintain' | 'Gain';
-  targetWeightKg: string;
-  activityLevel: 'Low' | 'Moderate' | 'High';
-};
-type DietaryPreferences = {
-  restrictions: string[];
-  allergies: string[];
-  preferredCuisines: string[];
-};
+type BasicInfo = { fullName: string /*…*/ };
+type HealthGoals = { goalType: string /*…*/ };
+type DietaryPreferences = { restrictions: string[] /*…*/ };
 
 type UserInfo = {
   email: string;
@@ -43,49 +29,53 @@ type UserInfo = {
   dietaryPreferences?: DietaryPreferences;
 };
 
-const USER_INFO_KEY = 'userInfo';
-
-// Menu items that navigate to sub-screens
 const menuItems = [
   {
     title: 'Basic Info',
     icon: 'person-outline',
     route: '/profile/basic',
-    subtitleKey: (u: UserInfo) =>
-      u.basicInfo ? u.basicInfo.fullName : 'Set up basic info',
+    subtitle: (u: UserInfo) =>
+      u.basicInfo?.fullName ?? 'Set up basic info',
   },
   {
     title: 'Health Goals',
     icon: 'barbell-outline',
     route: '/profile/goals',
-    subtitleKey: (u: UserInfo) =>
-      u.healthGoals ? u.healthGoals.goalType : 'Set up health goals',
+    subtitle: (u: UserInfo) =>
+      u.healthGoals?.goalType ?? 'Set up health goals',
   },
   {
     title: 'Dietary Preferences',
     icon: 'restaurant-outline',
     route: '/profile/dietary',
-    subtitleKey: (u: UserInfo) =>
-      u.dietaryPreferences
-        ? u.dietaryPreferences.restrictions.join(', ')
-        : 'Set up dietary preferences',
+    subtitle: (u: UserInfo) =>
+      u.dietaryPreferences?.restrictions.join(', ') ??
+      'Set up dietary preferences',
   },
 ];
 
 export default function ProfileScreen() {
-  const isDarkMode = useColorScheme() === 'dark';
+  const isDark = useColorScheme() === 'dark';
   const router = useRouter();
-
+  const [user, setUser] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [user, setUser]       = useState<UserInfo | null>(null);
 
   const loadUser = useCallback(async () => {
     setLoading(true);
     try {
-      const json = await AsyncStorage.getItem(USER_INFO_KEY);
-      if (json) setUser(JSON.parse(json));
+      const userId = await SecureStore.getItemAsync('userId');
+      if (!userId) throw new Error('Not logged in');
+      const resp = await getUserData(userId);
+      setUser({
+        email: resp.email,
+        username: resp.username,
+        basicInfo: resp.basicInfo,
+        healthGoals: resp.healthGoals,
+        dietaryPreferences: resp.dietaryPreferences,
+      });
     } catch (e) {
-      console.warn('Failed to load user info:', e);
+      console.warn('Failed to load user:', e);
+      Alert.alert('Error', 'Could not load profile data.');
     } finally {
       setLoading(false);
     }
@@ -110,7 +100,7 @@ export default function ProfileScreen() {
         {
           text: 'Yes',
           onPress: async () => {
-            await AsyncStorage.removeItem('USER_TOKEN');
+            await SecureStore.deleteItemAsync('userId');
             router.replace('/login');
           },
         },
@@ -119,66 +109,83 @@ export default function ProfileScreen() {
     );
   };
 
-  const onPressItem = (route: string) => {
-    router.push(route);
-  };
-
-  if (loading || !user) {
+  if (loading) {
     return (
       <SafeAreaView
-        style={[styles.darkContainer, isDarkMode && styles.darkContainer]}
+        style={[styles.container, isDark && styles.darkContainer]}
       >
         <ActivityIndicator
           size="large"
-          color={isDarkMode ? '#FFF' : '#000'}
+          color={isDark ? '#FFF' : '#000'}
           style={{ marginTop: 200 }}
         />
       </SafeAreaView>
     );
   }
 
-  const containerStyles = [styles.container, isDarkMode && styles.darkContainer];
-  const headerStyles = [styles.header, isDarkMode && styles.darkHeader];
-  const titleStyles = [styles.title, isDarkMode && styles.titleDark];
-  const profileNameStyles = [styles.profileName, isDarkMode && styles.textDark];
-  const subtitleStyles = [styles.subtitle, isDarkMode && styles.subtitleDark];
-
   return (
-    <SafeAreaView style={containerStyles}>
-
-      {/* Profile Info */}
-      <View style={styles.profileSection}>
-         <Ionicons name="person-circle" size={80} color="#1E90FF" />
-        <Text style={profileNameStyles}>{user.username}</Text>
-                <Text style={[styles.email, isDarkMode && styles.textLight]}>
-          {user.email}
+    <SafeAreaView
+      style={[styles.container, isDark && styles.darkContainer]}
+    >
+      {/* Page Heading */}
+      <View style={styles.titleContainer}>
+        <Text
+          style={[
+            styles.pageTitle,
+            isDark && styles.pageTitleDark,
+          ]}
+        >
+          Profile
         </Text>
       </View>
 
-      {/* Menu */}
       <FlatList
         data={menuItems}
-        keyExtractor={(item) => item.title}
+        keyExtractor={(it) => it.title}
+        contentContainerStyle={styles.listContent}
+        ItemSeparatorComponent={() => (
+          <View
+            style={[
+              styles.divider,
+              isDark && styles.dividerDark,
+            ]}
+          />
+        )}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={[styles.menuItem, isDarkMode && styles.menuItemDark]}
-            onPress={() => onPressItem(item.route)}
+            style={[
+              styles.menuItem,
+              isDark && styles.menuItemDark,
+            ]}
+            onPress={() => router.push(item.route as any)}
           >
             <Ionicons
               name={item.icon as any}
               size={22}
-              color={isDarkMode ? '#FFF' : '#5A4A42'}
+              color={isDark ? '#FFF' : '#6B8E23'}
             />
             <View style={styles.textContainer}>
-              <Text style={[styles.menuText, isDarkMode && styles.textDark]}>
+              <Text
+                style={[
+                  styles.menuText,
+                  isDark && styles.textDark,
+                ]}
+              >
                 {item.title}
               </Text>
-              <Text style={subtitleStyles}>{item.subtitleKey(user)}</Text>
+              <Text
+                style={[
+                  styles.subtitle,
+                  isDark && styles.subtitleDark,
+                ]}
+              >
+                {user ? item.subtitle(user) : ''}
+              </Text>
             </View>
             <MaterialIcons
               name="keyboard-arrow-right"
               size={24}
-              color={isDarkMode ? '#FFF' : '#5A4A42'}
+              color={isDark ? '#FFF' : '#888'}
             />
           </TouchableOpacity>
         )}
@@ -196,81 +203,66 @@ const styles = StyleSheet.create({
     backgroundColor: '#121212',
   },
 
-  header: {
-    paddingTop: 60,
-    paddingBottom: 20,
+  // Heading
+  titleContainer: {
+    paddingVertical: 16,
     alignItems: 'center',
-    backgroundColor: '#6B8E23',
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
   },
-  darkHeader: {
-    backgroundColor: '#2A2A2A',
-  },
-  title: {
-    fontSize: 22,
+  pageTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#000',
   },
-  titleDark: {
+  pageTitleDark: {
     color: '#FFF',
   },
 
-  profileSection: {
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  profileImage: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    borderWidth: 3,
-    borderColor: '#6B8E23',
-  },
-  profileName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
-    marginTop: 8,
-  },
-  textDark: {
-    color: '#FFF',
+  // Push list down a bit
+  listContent: {
+    paddingTop: 20,
   },
 
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#6B8E23',
+    padding: 16,
   },
-  menuItemDark: {
-    borderBottomColor: '#444',
-  },
+  menuItemDark: {},
+
   textContainer: {
     flex: 1,
-    marginLeft: 10,
+    marginLeft: 12,
   },
   menuText: {
     fontSize: 16,
-    color: '#000',
     fontWeight: '500',
+    color: '#000',
+  },
+  textDark: {
+    color: '#FFF',
   },
   subtitle: {
     fontSize: 12,
     color: '#666',
-    marginTop: 2,
+    marginTop: 4,
   },
   subtitleDark: {
     color: '#AAA',
   },
-    email: {
-    fontSize: 14,
-    color: '#555',
-    marginVertical: 4,
+  divider: {
+    height: 1,
+    backgroundColor: '#EEE',
+    marginHorizontal: 16,
   },
-    textLight: {
-    color: '#FFF',
+  dividerDark: {
+    backgroundColor: '#333',
+  },
+  logoutButton: {
+    padding: 16,
+    alignItems: 'center',
+  },
+  logoutText: {
+    color: '#D62828',
+    fontWeight: '600',
   },
 });

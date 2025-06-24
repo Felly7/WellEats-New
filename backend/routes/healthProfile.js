@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const HealthProfile = require('../models/HealthProfile');
-const auth = require('../middleware/auth'); //  JWT/auth middleware
+const {protect} = require('../middleware/auth'); //  JWT/protect middleware
 
 // GET /api/health-profile
-router.get('/', auth, async (req, res) => {
+router.get('/', protect, async (req, res) => {
   try {
     const profile = await HealthProfile.findOne({ userId: req.user.id });
     if (!profile) return res.status(404).json({ error: 'Profile not found' });
@@ -16,7 +16,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // POST /api/health-profile  (upsert)
-router.post('/', auth, async (req, res) => {
+router.post('/', protect, async (req, res) => {
   const { allergies, conditions, dietaryRestrictions, notes } = req.body;
   try {
     let profile = await HealthProfile.findOne({ userId: req.user.id });

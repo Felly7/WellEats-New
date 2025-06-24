@@ -33,7 +33,7 @@ const menuItems = [
 
 export default function ProfileScreen() {
   const isDarkMode = useColorScheme() === 'dark';
-  const [user, setUser] = useState([]);
+  const [user, setUser] = useState({ name: '', email: '' });
   const [confirmVisible, setConfirmVisible] = useState(false);
 
   // Load username from AsyncStorage on mount
@@ -47,7 +47,7 @@ export default function ProfileScreen() {
         console.log('Fetched user details:', response);
 
         setUser({
-          name: response.name,
+          name: response.fullName || response.username, // prioritize full name
           email: response.email,
         });
       } catch (error) {
@@ -103,7 +103,7 @@ export default function ProfileScreen() {
           style={styles.profileImage}
           source={require('../../assets/images/profile.jpg')}
         />
-        <Text style={profileNameStyles}>{username}</Text>
+        <Text style={profileNameStyles}>{user.name}</Text>
       </View>
 
       {/* Floating Confirmation Overlay */}

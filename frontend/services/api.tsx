@@ -17,6 +17,7 @@ export const api = axios.create({
 });
 
 
+
 // const SPOONACULAR_URL = 'https://api.spoonacular.com/recipes/complexSearch';
 // const SPOONACULAR_DETAILS_URL = 'https://api.spoonacular.com/recipes/{id}/information';
 
@@ -150,26 +151,37 @@ export const getUserData = async (token: string) => {
   }
 };
 
-// In services/api.js
-export const getAdminUsers = async () => {
-  const token = await SecureStore.getItemAsync('userId');
-  const response = await axios.get('/api/admin/users', {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  return response.data;
+ // Fetch all admin users
+ export const getAdminUsers = async () => {
+   const token = await SecureStore.getItemAsync('userId');
+   const { data } = await api.get('/admin/users', {
+    headers: { Authorization: `Bearer ${token}` },
+   });
+   return data;
+ };
+
+ // Update a user's role
+ export const updateUserRole = async (userId: string, newRole: string) => {
+   const token = await SecureStore.getItemAsync('userId');
+   await api.put(
+     `/admin/users/${userId}/role`,
+     { role: newRole },
+     { headers: { Authorization: `Bearer ${token}` } }
+   );
+ };
+
+ // Delete a user
+ export const deleteUser = async (userId: string) => {
+   const token = await SecureStore.getItemAsync('userId');
+   await api.delete(`/admin/users/${userId}`, {
+     headers: { Authorization: `Bearer ${token}` },
+   });
 };
 
-export const updateUserRole = async (userId: string, newRole : string) => {
+export const getAppStats = async () => {
   const token = await SecureStore.getItemAsync('userId');
-  await axios.put(`/api/admin/users/${userId}/role`, 
-    { role: newRole },
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-};
-
-export const deleteUser = async (userId: string) => {
-  const token = await SecureStore.getItemAsync('userId');
-  await axios.delete(`/api/admin/users/${userId}`, {
-    headers: { Authorization: `Bearer ${token}` }
+  const { data } = await api.get('/admin/stats', {
+    headers: { Authorization: `Bearer ${token}` },
   });
-};
+  return data;
+}

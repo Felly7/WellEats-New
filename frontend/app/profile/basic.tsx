@@ -30,7 +30,6 @@ type UserInfo = {
   basicInfo?: BasicInfo;
   // add other fields if needed
 };
-// import type { BasicInfo, UserInfo } from '../profile'; // adjust import path if needed
 
 const USER_INFO_KEY = 'userInfo';
 

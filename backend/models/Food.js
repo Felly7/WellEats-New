@@ -11,9 +11,8 @@ const FoodSchema = new Schema({
     sodium:   Number,
     sugars:   Number,
   },
+  views: { type: Number, default: 0 },
 });
 
-const Food = model('Food', FoodSchema);
-
-// Export as a property so you can destructure it in routes:
-module.exports.Food = Food;
+// **Default export** the model, not an object property
+module.exports = model('Food', FoodSchema);
