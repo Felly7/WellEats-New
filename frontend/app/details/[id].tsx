@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
   useColorScheme,
   ScrollView,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -37,6 +39,7 @@ type IngredientInfo = {
 const FAVORITES_KEY = 'FAVORITES';
 const HISTORY_KEY   = 'HISTORY';
 const MAX_HISTORY   = 50;
+const { width } = Dimensions.get('window');
 
 export default function DetailsScreen() {
   const { id }             = useLocalSearchParams<{ id: string }>();
@@ -50,6 +53,27 @@ export default function DetailsScreen() {
   const [isFavorite, setIsFavorite]       = useState(false);
   const [localMeal, setLocalMeal] = useState<Meal | null>(null);
   const [loadingLocal, setLoadingLocal] = useState(true);
+  const [scrollY] = useState(new Animated.Value(0));
+
+  // Animation values
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(50));
+
+  useEffect(() => {
+    // Animate content in
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   // 1️⃣ Fetch meal: check local dataset first, then remote; check favorite & record history
   useEffect(() => {
@@ -177,11 +201,31 @@ export default function DetailsScreen() {
     })();
   }, [dish, localMeal]);
 
+  // Parallax effect for header image
+  const headerImageScale = scrollY.interpolate({
+    inputRange: [-100, 0],
+    outputRange: [1.2, 1],
+    extrapolateLeft: 'extend',
+    extrapolateRight: 'clamp',
+  });
+
+  const headerImageOpacity = scrollY.interpolate({
+    inputRange: [0, 200],
+    outputRange: [1, 0.8],
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+
   // Show loader until either local or remote data is ready
   if ((localMeal && loadingLocal) || (!localMeal && loadingDish)) {
     return (
       <View style={[styles.loader, isDarkMode && styles.darkBg]}>
-        <ActivityIndicator size="large" color={isDarkMode ? '#FFF' : '#000'} />
+        <View style={styles.loaderContent}>
+          <ActivityIndicator size="large" color="#FF6B6B" />
+          <Text style={[styles.loadingText, { color: isDarkMode ? '#FFF' : '#666' }]}>
+            Loading delicious details...
+          </Text>
+        </View>
       </View>
     );
   }
@@ -189,186 +233,564 @@ export default function DetailsScreen() {
   // If local meal found, render its details
   if (localMeal) {
     return (
-      <SafeAreaView style={[styles.container, isDarkMode && styles.darkBg]}>
-        <ScrollView>
-          <Image source={localMeal.thumbnail} style={styles.image} />
-
-          {/* Back Button */}
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={24} color="white" />
-          </TouchableOpacity>
-
-          {/* Favorite Button */}
-          <TouchableOpacity style={styles.favoriteButton} onPress={toggleFavorite}>
-            <Ionicons
-              name={isFavorite ? 'heart' : 'heart-outline'}
-              size={24}
-              color="white"
+      <View style={[styles.container, isDarkMode && styles.darkBg]}>
+        <Animated.ScrollView
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: false }
+          )}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Hero Image Section */}
+          <View style={styles.heroContainer}>
+            <Animated.Image 
+              source={localMeal.thumbnail} 
+              style={[
+                styles.heroImage,
+                {
+                  transform: [{ scale: headerImageScale }],
+                  opacity: headerImageOpacity,
+                }
+              ]} 
             />
-          </TouchableOpacity>
+            <View style={styles.heroOverlay} />
+            
+            {/* Floating Action Buttons */}
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+              <Ionicons name="chevron-back" size={24} color="white" />
+            </TouchableOpacity>
 
-          <View style={[styles.overlay, { backgroundColor: isDarkMode ? '#000' : '#FFF' }]}>
-            <Text style={[styles.title, isDarkMode && styles.textDark]}>
-              {localMeal.name}
-            </Text>
-            <Text style={[styles.description, { color: isDarkMode ? '#CCC' : '#555' }]}>
-              {localMeal.instructions}
-            </Text>
-
-            <Text style={[styles.subheader, isDarkMode && styles.textDark]}>Category</Text>
-            <Text style={[styles.textItem, isDarkMode && styles.textDark]}>
-              {localMeal.category}
-            </Text>
-
-            <Text style={[styles.subheader, isDarkMode && styles.textDark]}>Ingredients</Text>
-            {localMeal.ingredients.map((ing, idx) => (
-              <Text key={idx} style={[styles.textItem, isDarkMode && styles.textDark]}>
-                • {ing}
-              </Text>
-            ))}
-
-            <Text style={[styles.subheader, isDarkMode && styles.textDark]}>Nutrition</Text>
-            <Text style={[styles.textItem, isDarkMode && styles.textDark]}>
-              Calories: {localMeal.nutrition.calories}
-            </Text>
-            <Text style={[styles.textItem, isDarkMode && styles.textDark]}>
-              Protein: {localMeal.nutrition.protein} g
-            </Text>
-            <Text style={[styles.textItem, isDarkMode && styles.textDark]}>
-              Fat: {localMeal.nutrition.fat} g
-            </Text>
-            <Text style={[styles.textItem, isDarkMode && styles.textDark]}>
-              Carbs: {localMeal.nutrition.carbs} g
-            </Text>
+            <TouchableOpacity style={styles.favoriteButton} onPress={toggleFavorite}>
+              <Ionicons
+                name={isFavorite ? 'heart' : 'heart-outline'}
+                size={24}
+                color={isFavorite ? '#FF6B6B' : 'white'}
+              />
+            </TouchableOpacity>
           </View>
-        </ScrollView>
-      </SafeAreaView>
+
+          {/* Content Section */}
+          <Animated.View 
+            style={[
+              styles.contentContainer, 
+              { backgroundColor: isDarkMode ? '#1a1a1a' : '#FFF' },
+              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+            ]}
+          >
+            {/* Title Section */}
+            <View style={styles.titleSection}>
+              <Text style={[styles.title, isDarkMode && styles.textDark]}>
+                {localMeal.name}
+              </Text>
+              <View style={styles.categoryBadge}>
+                <Text style={styles.categoryText}>{localMeal.category}</Text>
+              </View>
+            </View>
+
+            {/* Nutrition Cards */}
+            <View style={styles.nutritionGrid}>
+              <View style={[styles.nutritionCard, isDarkMode && styles.darkCard]}>
+                <Ionicons name="flame" size={20} color="#FF6B6B" />
+                <Text style={[styles.nutritionValue, isDarkMode && styles.textDark]}>
+                  {localMeal.nutrition.calories}
+                </Text>
+                <Text style={[styles.nutritionLabel, isDarkMode && styles.textSecondary]}>
+                  Calories
+                </Text>
+              </View>
+              <View style={[styles.nutritionCard, isDarkMode && styles.darkCard]}>
+                <Ionicons name="fitness" size={20} color="#4ECDC4" />
+                <Text style={[styles.nutritionValue, isDarkMode && styles.textDark]}>
+                  {localMeal.nutrition.protein}g
+                </Text>
+                <Text style={[styles.nutritionLabel, isDarkMode && styles.textSecondary]}>
+                  Protein
+                </Text>
+              </View>
+              <View style={[styles.nutritionCard, isDarkMode && styles.darkCard]}>
+                <Ionicons name="water" size={20} color="#45B7D1" />
+                <Text style={[styles.nutritionValue, isDarkMode && styles.textDark]}>
+                  {localMeal.nutrition.fat}g
+                </Text>
+                <Text style={[styles.nutritionLabel, isDarkMode && styles.textSecondary]}>
+                  Fat
+                </Text>
+              </View>
+              <View style={[styles.nutritionCard, isDarkMode && styles.darkCard]}>
+                <Ionicons name="leaf" size={20} color="#96CEB4" />
+                <Text style={[styles.nutritionValue, isDarkMode && styles.textDark]}>
+                  {localMeal.nutrition.carbs}g
+                </Text>
+                <Text style={[styles.nutritionLabel, isDarkMode && styles.textSecondary]}>
+                  Carbs
+                </Text>
+              </View>
+            </View>
+
+            {/* Instructions Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="book" size={20} color="#FF6B6B" />
+                <Text style={[styles.sectionTitle, isDarkMode && styles.textDark]}>
+                  Instructions
+                </Text>
+              </View>
+              <Text style={[styles.instructions, isDarkMode && styles.textSecondary]}>
+                {localMeal.instructions}
+              </Text>
+            </View>
+
+            {/* Ingredients Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="list" size={20} color="#4ECDC4" />
+                <Text style={[styles.sectionTitle, isDarkMode && styles.textDark]}>
+                  Ingredients
+                </Text>
+              </View>
+              <View style={styles.ingredientsList}>
+                {localMeal.ingredients.map((ing, idx) => (
+                  <View key={idx} style={[styles.ingredientItem, isDarkMode && styles.darkCard]}>
+                    <View style={styles.ingredientDot} />
+                    <Text style={[styles.ingredientText, isDarkMode && styles.textDark]}>
+                      {ing}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </Animated.View>
+        </Animated.ScrollView>
+      </View>
     );
   }
 
   // Otherwise render remote-fetched dish
   return (
-    <SafeAreaView style={[styles.container, isDarkMode && styles.darkBg]}>
-      <ScrollView>
-        <Image source={{ uri: dish.strMealThumb }} style={styles.image} />
-
-        {/* Back Button */}
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={24} color="white" />
-        </TouchableOpacity>
-
-        {/* Favorite Button */}
-        <TouchableOpacity style={styles.favoriteButton} onPress={toggleFavorite}>
-          <Ionicons
-            name={isFavorite ? 'heart' : 'heart-outline'}
-            size={24}
-            color="white"
+    <View style={[styles.container, isDarkMode && styles.darkBg]}>
+      <Animated.ScrollView
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Hero Image Section */}
+        <View style={styles.heroContainer}>
+          <Animated.Image 
+            source={{ uri: dish.strMealThumb }} 
+            style={[
+              styles.heroImage,
+              {
+                transform: [{ scale: headerImageScale }],
+                opacity: headerImageOpacity,
+              }
+            ]} 
           />
-        </TouchableOpacity>
+          <View style={styles.heroOverlay} />
+          
+          {/* Floating Action Buttons */}
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={24} color="white" />
+          </TouchableOpacity>
 
-        <View style={[styles.overlay, { backgroundColor: isDarkMode ? '#000' : '#FFF' }]}>
-          <Text style={[styles.title, isDarkMode && styles.textDark]}>{dish.strMeal}</Text>
-          <Text style={[styles.description, { color: isDarkMode ? '#CCC' : '#555' }]}>
-            {dish.strInstructions}
-          </Text>
-
-          <Text style={[styles.subheader, { color: isDarkMode ? '#FFF' : '#000' }]}>
-            Ingredients & Nutrition
-          </Text>
-
-          {loadingNutrition ? (
-            <ActivityIndicator size="small" color={isDarkMode ? '#FFF' : '#000'} />
-          ) : ingredients.length > 0 ? (
-            ingredients.map((ing, idx) => (
-              <View key={idx} style={styles.row}>
-                <View style={styles.leftCol}>
-                  <Text style={[styles.ingName, { color: isDarkMode ? '#FFF' : '#000' }]}>
-                    {ing.name}
-                  </Text>
-                  <Text style={[styles.ingMeasure, { color: isDarkMode ? '#CCC' : '#555' }]}>
-                    {ing.measure}
-                  </Text>
-                </View>
-                <View style={styles.centerCol}>
-                  <Text style={styles.nutText}>Cal: {ing.nutrition.calories}</Text>
-                  <Text style={styles.nutText}>Prot: {ing.nutrition.protein}</Text>
-                  <Text style={styles.nutText}>Fat: {ing.nutrition.fat}</Text>
-                  <Text style={styles.nutText}>Sugars: {ing.nutrition.sugars}</Text>
-                  <Text style={styles.nutText}>Na: {ing.nutrition.sodium}</Text>
-                </View>
-                <View style={styles.rightCol}>
-                  {ing.allergens.map((a, i) => (
-                    <Text key={i} style={styles.allergen}>
-                      {a.replace('en:', '')}
-                    </Text>
-                  ))}
-                </View>
-              </View>
-            ))
-          ) : (
-            <Text style={[styles.emptyText, { color: isDarkMode ? '#FFF' : '#000' }]}>
-              No ingredient data
-            </Text>
-          )}
+          <TouchableOpacity style={styles.favoriteButton} onPress={toggleFavorite}>
+            <Ionicons
+              name={isFavorite ? 'heart' : 'heart-outline'}
+              size={24}
+              color={isFavorite ? '#FF6B6B' : 'white'}
+            />
+          </TouchableOpacity>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+
+        {/* Content Section */}
+        <Animated.View 
+          style={[
+            styles.contentContainer, 
+            { backgroundColor: isDarkMode ? '#1a1a1a' : '#FFF' },
+            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+          ]}
+        >
+          {/* Title Section */}
+          <View style={styles.titleSection}>
+            <Text style={[styles.title, isDarkMode && styles.textDark]}>
+              {dish.strMeal}
+            </Text>
+          </View>
+
+          {/* Instructions Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="book" size={20} color="#FF6B6B" />
+              <Text style={[styles.sectionTitle, isDarkMode && styles.textDark]}>
+                Instructions
+              </Text>
+            </View>
+            <Text style={[styles.instructions, isDarkMode && styles.textSecondary]}>
+              {dish.strInstructions}
+            </Text>
+          </View>
+
+          {/* Ingredients & Nutrition Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="nutrition" size={20} color="#4ECDC4" />
+              <Text style={[styles.sectionTitle, isDarkMode && styles.textDark]}>
+                Ingredients & Nutrition
+              </Text>
+            </View>
+
+            {loadingNutrition ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color="#FF6B6B" />
+                <Text style={[styles.loadingText, isDarkMode && styles.textSecondary]}>
+                  Loading nutrition data...
+                </Text>
+              </View>
+            ) : ingredients.length > 0 ? (
+              <View style={styles.ingredientsGrid}>
+                {ingredients.map((ing, idx) => (
+                  <View key={idx} style={[styles.ingredientCard, isDarkMode && styles.darkCard]}>
+                    <View style={styles.ingredientHeader}>
+                      <Text style={[styles.ingredientName, isDarkMode && styles.textDark]}>
+                        {ing.name}
+                      </Text>
+                      <Text style={[styles.ingredientMeasure, isDarkMode && styles.textSecondary]}>
+                        {ing.measure}
+                      </Text>
+                    </View>
+                    
+                    <View style={styles.nutritionRow}>
+                      <View style={styles.nutritionItem}>
+                        <Text style={styles.nutritionNumber}>{ing.nutrition.calories}</Text>
+                        <Text style={styles.nutritionUnit}>cal</Text>
+                      </View>
+                      <View style={styles.nutritionItem}>
+                        <Text style={styles.nutritionNumber}>{ing.nutrition.protein}</Text>
+                        <Text style={styles.nutritionUnit}>p</Text>
+                      </View>
+                      <View style={styles.nutritionItem}>
+                        <Text style={styles.nutritionNumber}>{ing.nutrition.fat}</Text>
+                        <Text style={styles.nutritionUnit}>f</Text>
+                      </View>
+                      <View style={styles.nutritionItem}>
+                        <Text style={styles.nutritionNumber}>{ing.nutrition.sugars}</Text>
+                        <Text style={styles.nutritionUnit}>s</Text>
+                      </View>
+                    </View>
+
+                    {ing.allergens.length > 0 && (
+                      <View style={styles.allergensContainer}>
+                        {ing.allergens.map((allergen, i) => (
+                          <View key={i} style={styles.allergenTag}>
+                            <Text style={styles.allergenText}>
+                              {allergen.replace('en:', '')}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.emptyState}>
+                <Ionicons name="sad" size={40} color="#ccc" />
+                <Text style={[styles.emptyText, isDarkMode && styles.textSecondary]}>
+                  No ingredient data available
+                </Text>
+              </View>
+            )}
+          </View>
+        </Animated.View>
+      </Animated.ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container:       { flex: 1, backgroundColor: '#FFF' },
-  darkBg:          { backgroundColor: '#000' },
-  loader:          { flex: 1, justifyContent: 'center', alignItems: 'center' },
-
-  image:           { width: '100%', height: 250, resizeMode: 'cover' },
-  backButton:      {
-    position:          'absolute',
-    top:               40,
-    left:              20,
-    backgroundColor:   'rgba(0,0,0,0.5)',
-    padding:           8,
-    borderRadius:      20,
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
   },
-  favoriteButton:  {
-    position:          'absolute',
-    top:               40,
-    right:             20,
-    backgroundColor:   'rgba(0,0,0,0.5)',
-    padding:           8,
-    borderRadius:      20,
+  darkBg: {
+    backgroundColor: '#0d1117',
+  },
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+  },
+  loaderContent: {
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: '500',
   },
 
-  overlay:         {
-    padding:           16,
-    marginTop:        -20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius:20,
+  // Hero Section
+  heroContainer: {
+    height: 320,
+    position: 'relative',
+    overflow: 'hidden',
   },
-  title:           { fontSize: 28, fontWeight: 'bold', color: '#D4A857' },
-  textDark:        { color: '#FFF' },
-  description:     { fontSize: 16, marginVertical: 12 },
-  subheader:       { fontSize: 20, fontWeight: 'bold', marginTop: 16 },
-  textItem:        { fontSize: 16, marginBottom: 8, color: '#000' },  // Added textItem style
-
-  row:             {
-    flexDirection:   'row',
-    marginVertical:  8,
-    paddingVertical: 8,
-    borderBottomWidth:1,
-    borderColor:     '#444',
+  heroImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
-  leftCol:         { flex: 2 },
-  centerCol:       { flex: 3, alignItems: 'flex-start' },
-  rightCol:        { flex: 2, alignItems: 'flex-end' },
+  heroOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 12,
+    borderRadius: 25,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 12,
+    borderRadius: 25,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
+  },
 
-  ingName:         { fontSize: 16, fontWeight: '600' },
-  ingMeasure:      { fontSize: 12 },
+  // Content Section
+  contentContainer: {
+    marginTop: -30,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingTop: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    minHeight: 600,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+  },
 
-  nutText:         { fontSize: 12, color: '#D4A857' },
+  // Title Section
+  titleSection: {
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 12,
+    lineHeight: 34,
+  },
+  textDark: {
+    color: '#ffffff',
+  },
+  textSecondary: {
+    color: '#8b949e',
+  },
+  categoryBadge: {
+    backgroundColor: '#FF6B6B',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+  },
+  categoryText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
 
-  allergen:        { fontSize: 10, color: '#E63946', fontWeight: 'bold' },
+  // Nutrition Grid
+  nutritionGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 32,
+  },
+  nutritionCard: {
+    flex: 1,
+    backgroundColor: 'white',
+    padding: 16,
+    marginHorizontal: 4,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  darkCard: {
+    backgroundColor: '#21262d',
+  },
+  nutritionValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginTop: 8,
+  },
+  nutritionLabel: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    marginTop: 4,
+    fontWeight: '500',
+  },
 
-  emptyText:       { fontSize: 16, marginTop: 20, textAlign: 'center' },
-  
+  // Sections
+  section: {
+    marginBottom: 32,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginLeft: 8,
+  },
+  instructions: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#555',
+  },
+
+  // Ingredients List (Local)
+  ingredientsList: {
+    marginTop: 8,
+  },
+  ingredientItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    padding: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  ingredientDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4ECDC4',
+    marginRight: 12,
+  },
+  ingredientText: {
+    fontSize: 16,
+    color: '#2c3e50',
+    flex: 1,
+  },
+
+  // Ingredients Grid (Remote)
+  ingredientsGrid: {
+    marginTop: 8,
+  },
+  ingredientCard: {
+    backgroundColor: 'white',
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  ingredientHeader: {
+    marginBottom: 12,
+  },
+  ingredientName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 4,
+  },
+  ingredientMeasure: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    fontStyle: 'italic',
+  },
+  nutritionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 12,
+  },
+  nutritionItem: {
+    alignItems: 'center',
+  },
+  nutritionNumber: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FF6B6B',
+  },
+  nutritionUnit: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    marginTop: 2,
+  },
+
+  // Allergens
+  allergensContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
+  },
+  allergenTag: {
+    backgroundColor: '#FFE5E5',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginRight: 6,
+    marginBottom: 4,
+  },
+  allergenText: {
+    fontSize: 10,
+    color: '#E63946',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+
+  // Loading and Empty States
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#7f8c8d',
+    marginTop: 12,
+    textAlign: 'center',
+  },
 });

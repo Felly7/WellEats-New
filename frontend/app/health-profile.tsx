@@ -12,19 +12,40 @@ import {
   TextInput,
   Alert,
   SafeAreaView,
+  StatusBar,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { getHealthProfile, saveHealthProfile, HealthProfile } from '../services/healthProfile';
+
+const { width } = Dimensions.get('window');
 
 export default function HealthProfileScreen() {
   const isDark = useColorScheme() === 'dark';
   const [profile, setProfile] = useState<HealthProfile | null>(null);
   const [newAllergy, setNewAllergy] = useState('');
   const [loading, setLoading] = useState(true);
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(50));
 
   useEffect(() => {
     loadProfile();
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
   const loadProfile = async () => {
@@ -43,12 +64,12 @@ export default function HealthProfileScreen() {
     
     try {
       await saveHealthProfile(profile);
-      Alert.alert('Success', 'Your health profile has been saved!', [
-        { text: 'OK', onPress: () => router.back() }
+      Alert.alert('Success! 🎉', 'Your health profile has been saved and we\'ll personalize your meal recommendations!', [
+        { text: 'Great!', onPress: () => router.back() }
       ]);
     } catch (error) {
       console.error('Error saving profile:', error);
-      Alert.alert('Error', 'Failed to save your profile. Please try again.');
+      Alert.alert('Oops! 😅', 'Failed to save your profile. Please try again.');
     }
   };
 
@@ -109,48 +130,166 @@ export default function HealthProfileScreen() {
     });
   };
 
+  const formatLabel = (key: string) => {
+    return key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+  };
+
+  const getSectionIcon = (section: string) => {
+    switch (section) {
+      case 'dietary': return 'leaf-outline';
+      case 'allergies': return 'warning-outline';
+      case 'preferences': return 'heart-outline';
+      case 'healthGoals': return 'fitness-outline';
+      default: return 'settings-outline';
+    }
+  };
+
   if (loading || !profile) {
     return (
-      <SafeAreaView style={[styles.container, isDark && styles.darkBg]}>
-        <View style={styles.loader}>
-          <Text style={[styles.loadingText, { color: isDark ? '#FFF' : '#000' }]}>
-            Loading your profile...
-          </Text>
-        </View>
-      </SafeAreaView>
+      <View style={[styles.container, isDark && styles.darkBg]}>
+        <StatusBar barStyle="light-content" />
+        <LinearGradient
+          colors={['#FF6B6B', '#4ECDC4']}
+          style={styles.loadingGradient}
+        >
+          <View style={styles.loaderContent}>
+            <View style={styles.logoContainer}>
+              <LinearGradient
+                colors={['rgba(255,255,255,0.3)', 'rgba(255,255,255,0.1)']}
+                style={styles.logoGradient}
+              >
+                <Ionicons name="person" size={40} color="white" />
+              </LinearGradient>
+            </View>
+            <Text style={styles.loadingText}>Loading your profile...</Text>
+            <Text style={styles.loadingSubtext}>Setting up your personalized experience</Text>
+          </View>
+        </LinearGradient>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, isDark && styles.darkBg]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="white" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Health Profile</Text>
-        <TouchableOpacity onPress={handleSave}>
-          <Text style={styles.saveButton}>Save</Text>
-        </TouchableOpacity>
-      </View>
+    <View style={[styles.container, isDark && styles.darkBg]}>
+      <StatusBar barStyle="light-content" />
+      
+      {/* Header with gradient background */}
+      <LinearGradient
+        colors={['#FF6B6B', '#4ECDC4']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.headerGradient}
+      >
+        <SafeAreaView edges={['top']}>
+          <View style={styles.headerContainer}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <BlurView intensity={20} style={styles.backButtonBlur}>
+                <Ionicons name="chevron-back" size={24} color="#FFF" />
+              </BlurView>
+            </TouchableOpacity>
+            
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>Health Profile</Text>
+              <Text style={styles.headerSubtitle}>Personalize your meals</Text>
+            </View>
+            
+            <TouchableOpacity 
+              style={styles.saveButton}
+              onPress={handleSave}
+              activeOpacity={0.7}
+            >
+              <BlurView intensity={20} style={styles.saveButtonBlur}>
+                <Ionicons name="checkmark" size={24} color="#FFF" />
+              </BlurView>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <Animated.ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}
+      >
+        {/* Profile Stats Card */}
+        <View style={[styles.statsCard, isDark && styles.statsCardDark]}>
+          <LinearGradient
+            colors={isDark ? ['#21262d', '#30363d'] : ['#ffffff', '#f8f9fa']}
+            style={styles.statsGradient}
+          >
+            <View style={styles.statsContent}>
+              <View style={styles.statItem}>
+                <View style={[styles.statIcon, { backgroundColor: '#FF6B6B20' }]}>
+                  <Ionicons name="restaurant" size={20} color="#FF6B6B" />
+                </View>
+                <Text style={[styles.statNumber, isDark && styles.textDark]}>
+                  {Object.values(profile.dietary).filter(Boolean).length}
+                </Text>
+                <Text style={[styles.statLabel, isDark && styles.textSecondary]}>Dietary</Text>
+              </View>
+              
+              <View style={styles.statDivider} />
+              
+              <View style={styles.statItem}>
+                <View style={[styles.statIcon, { backgroundColor: '#4ECDC420' }]}>
+                  <Ionicons name="heart" size={20} color="#4ECDC4" />
+                </View>
+                <Text style={[styles.statNumber, isDark && styles.textDark]}>
+                  {Object.values(profile.preferences).filter(Boolean).length}
+                </Text>
+                <Text style={[styles.statLabel, isDark && styles.textSecondary]}>Preferences</Text>
+              </View>
+              
+              <View style={styles.statDivider} />
+              
+              <View style={styles.statItem}>
+                <View style={[styles.statIcon, { backgroundColor: '#FFD93D20' }]}>
+                  <Ionicons name="fitness" size={20} color="#FFD93D" />
+                </View>
+                <Text style={[styles.statNumber, isDark && styles.textDark]}>
+                  {Object.values(profile.healthGoals).filter(Boolean).length}
+                </Text>
+                <Text style={[styles.statLabel, isDark && styles.textSecondary]}>Goals</Text>
+              </View>
+            </View>
+          </LinearGradient>
+        </View>
+
         {/* Dietary Restrictions */}
         <View style={[styles.section, isDark && styles.sectionDark]}>
-          <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
-            Dietary Restrictions
-          </Text>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIconContainer, { backgroundColor: '#FF6B6B20' }]}>
+              <Ionicons name={getSectionIcon('dietary')} size={20} color="#FF6B6B" />
+            </View>
+            <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
+              Dietary Restrictions
+            </Text>
+          </View>
           
           {Object.entries(profile.dietary).map(([key, value]) => (
-            <View key={key} style={styles.optionRow}>
-              <Text style={[styles.optionText, isDark && styles.optionTextDark]}>
-                {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
-              </Text>
+            <View key={key} style={[styles.optionRow, isDark && styles.optionRowDark]}>
+              <View style={styles.optionContent}>
+                <Text style={[styles.optionText, isDark && styles.optionTextDark]}>
+                  {formatLabel(key)}
+                </Text>
+                <Text style={[styles.optionDescription, isDark && styles.textSecondary]}>
+                  {key === 'vegetarian' ? 'No meat or fish' :
+                   key === 'vegan' ? 'No animal products' :
+                   key === 'glutenFree' ? 'No gluten ingredients' :
+                   key === 'dairyFree' ? 'No dairy products' :
+                   key === 'nutFree' ? 'No nuts or tree nuts' : 'Dietary preference'}
+                </Text>
+              </View>
               <Switch
                 value={value}
                 onValueChange={() => toggleDietary(key as keyof HealthProfile['dietary'])}
-                trackColor={{ false: '#767577', true: '#6B8E23' }}
-                thumbColor={value ? '#FFF' : '#f4f3f4'}
+                trackColor={{ false: isDark ? '#39424b' : '#E0E0E0', true: '#FF6B6B40' }}
+                thumbColor={value ? '#FF6B6B' : isDark ? '#8b949e' : '#f4f3f4'}
+                ios_backgroundColor={isDark ? '#39424b' : '#E0E0E0'}
               />
             </View>
           ))}
@@ -158,52 +297,81 @@ export default function HealthProfileScreen() {
 
         {/* Allergies */}
         <View style={[styles.section, isDark && styles.sectionDark]}>
-          <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
-            Allergies
-          </Text>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIconContainer, { backgroundColor: '#FF851B20' }]}>
+              <Ionicons name={getSectionIcon('allergies')} size={20} color="#FF851B" />
+            </View>
+            <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
+              Allergies & Intolerances
+            </Text>
+          </View>
           
           <View style={styles.addAllergyContainer}>
-            <TextInput
-              style={[styles.allergyInput, isDark && styles.allergyInputDark]}
-              placeholder="Add an allergy (e.g., nuts, eggs)"
-              placeholderTextColor={isDark ? '#888' : '#AAA'}
-              value={newAllergy}
-              onChangeText={setNewAllergy}
-              onSubmitEditing={addAllergy}
-            />
+            <View style={[styles.allergyInputContainer, isDark && styles.allergyInputContainerDark]}>
+              <Ionicons name="add-circle-outline" size={20} color={isDark ? '#8b949e' : '#666'} />
+              <TextInput
+                style={[styles.allergyInput, isDark && styles.allergyInputDark]}
+                placeholder="Add an allergy (e.g., nuts, eggs, shellfish)"
+                placeholderTextColor={isDark ? '#8b949e' : '#999'}
+                value={newAllergy}
+                onChangeText={setNewAllergy}
+                onSubmitEditing={addAllergy}
+              />
+            </View>
             <TouchableOpacity style={styles.addButton} onPress={addAllergy}>
-              <Ionicons name="add" size={20} color="white" />
+              <LinearGradient
+                colors={['#4ECDC4', '#44A08D']}
+                style={styles.addButtonGradient}
+              >
+                <Ionicons name="add" size={20} color="white" />
+              </LinearGradient>
             </TouchableOpacity>
           </View>
 
-          {profile.allergies.map((allergy) => (
-            <View key={allergy} style={styles.allergyTag}>
-              <Text style={styles.allergyText}>
-                {allergy.charAt(0).toUpperCase() + allergy.slice(1)}
-              </Text>
-              <TouchableOpacity onPress={() => removeAllergy(allergy)}>
-                <Ionicons name="close" size={16} color="#6B8E23" />
-              </TouchableOpacity>
-            </View>
-          ))}
+          <View style={styles.allergyTagsContainer}>
+            {profile.allergies.map((allergy) => (
+              <View key={allergy} style={[styles.allergyTag, isDark && styles.allergyTagDark]}>
+                <Text style={[styles.allergyText, isDark && styles.allergyTextDark]}>
+                  {allergy.charAt(0).toUpperCase() + allergy.slice(1)}
+                </Text>
+                <TouchableOpacity onPress={() => removeAllergy(allergy)} style={styles.removeAllergyButton}>
+                  <Ionicons name="close" size={16} color="#FF6B6B" />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
         </View>
 
         {/* Food Preferences */}
         <View style={[styles.section, isDark && styles.sectionDark]}>
-          <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
-            Food Preferences
-          </Text>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIconContainer, { backgroundColor: '#4ECDC420' }]}>
+              <Ionicons name={getSectionIcon('preferences')} size={20} color="#4ECDC4" />
+            </View>
+            <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
+              Food Preferences
+            </Text>
+          </View>
           
           {Object.entries(profile.preferences).map(([key, value]) => (
-            <View key={key} style={styles.optionRow}>
-              <Text style={[styles.optionText, isDark && styles.optionTextDark]}>
-                {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
-              </Text>
+            <View key={key} style={[styles.optionRow, isDark && styles.optionRowDark]}>
+              <View style={styles.optionContent}>
+                <Text style={[styles.optionText, isDark && styles.optionTextDark]}>
+                  {formatLabel(key)}
+                </Text>
+                <Text style={[styles.optionDescription, isDark && styles.textSecondary]}>
+                  {key === 'spicy' ? 'Enjoys spicy foods' :
+                   key === 'sweets' ? 'Prefers desserts & sweet treats' :
+                   key === 'lowSodium' ? 'Reduced salt intake' :
+                   key === 'organic' ? 'Prefers organic ingredients' : 'Food preference'}
+                </Text>
+              </View>
               <Switch
                 value={value}
                 onValueChange={() => togglePreference(key as keyof HealthProfile['preferences'])}
-                trackColor={{ false: '#767577', true: '#6B8E23' }}
-                thumbColor={value ? '#FFF' : '#f4f3f4'}
+                trackColor={{ false: isDark ? '#39424b' : '#E0E0E0', true: '#4ECDC440' }}
+                thumbColor={value ? '#4ECDC4' : isDark ? '#8b949e' : '#f4f3f4'}
+                ios_backgroundColor={isDark ? '#39424b' : '#E0E0E0'}
               />
             </View>
           ))}
@@ -211,177 +379,437 @@ export default function HealthProfileScreen() {
 
         {/* Health Goals */}
         <View style={[styles.section, isDark && styles.sectionDark]}>
-          <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
-            Health Goals
-          </Text>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIconContainer, { backgroundColor: '#FFD93D20' }]}>
+              <Ionicons name={getSectionIcon('healthGoals')} size={20} color="#FFD93D" />
+            </View>
+            <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
+              Health & Wellness Goals
+            </Text>
+          </View>
           
           {Object.entries(profile.healthGoals).map(([key, value]) => (
-            <View key={key} style={styles.optionRow}>
-              <Text style={[styles.optionText, isDark && styles.optionTextDark]}>
-                {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
-              </Text>
+            <View key={key} style={[styles.optionRow, isDark && styles.optionRowDark]}>
+              <View style={styles.optionContent}>
+                <Text style={[styles.optionText, isDark && styles.optionTextDark]}>
+                  {formatLabel(key)}
+                </Text>
+                <Text style={[styles.optionDescription, isDark && styles.textSecondary]}>
+                  {key === 'weightLoss' ? 'Focus on calorie-conscious meals' :
+                   key === 'muscleGain' ? 'High-protein meal options' :
+                   key === 'heartHealth' ? 'Heart-healthy ingredients' :
+                   key === 'diabeticFriendly' ? 'Blood sugar friendly options' : 'Health goal'}
+                </Text>
+              </View>
               <Switch
                 value={value}
                 onValueChange={() => toggleHealthGoal(key as keyof HealthProfile['healthGoals'])}
-                trackColor={{ false: '#767577', true: '#6B8E23' }}
-                thumbColor={value ? '#FFF' : '#f4f3f4'}
+                trackColor={{ false: isDark ? '#39424b' : '#E0E0E0', true: '#FFD93D40' }}
+                thumbColor={value ? '#FFD93D' : isDark ? '#8b949e' : '#f4f3f4'}
+                ios_backgroundColor={isDark ? '#39424b' : '#E0E0E0'}
               />
             </View>
           ))}
         </View>
 
-        {/* Info */}
-        <View style={[styles.infoSection, isDark && styles.infoSectionDark]}>
-          <Ionicons name="information-circle" size={20} color="#6B8E23" />
-          <Text style={[styles.infoText, isDark && styles.infoTextDark]}>
-            Your health profile helps us recommend meals that match your dietary needs and preferences.
-            All data is stored locally on your device.
-          </Text>
+        {/* Info Card */}
+        <View style={[styles.infoCard, isDark && styles.infoCardDark]}>
+          <LinearGradient
+            colors={['#4ECDC4', '#44A08D']}
+            style={styles.infoGradient}
+          >
+            <View style={styles.infoContent}>
+              <View style={styles.infoIcon}>
+                <Ionicons name="information-circle" size={24} color="white" />
+              </View>
+              <View style={styles.infoTextContainer}>
+                <Text style={styles.infoTitle}>Your Privacy Matters</Text>
+                <Text style={styles.infoText}>
+                  All your health data is stored securely on your device and never shared with third parties.
+                </Text>
+              </View>
+            </View>
+          </LinearGradient>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+
+        {/* Save Button */}
+        <TouchableOpacity style={styles.saveButtonMain} onPress={handleSave} activeOpacity={0.9}>
+          <LinearGradient
+            colors={['#FF6B6B', '#FF8E53']}
+            style={styles.saveButtonGradient}
+          >
+            <Text style={styles.saveButtonText}>Save Profile & Get Recommendations</Text>
+            <Ionicons name="arrow-forward" size={20} color="white" />
+          </LinearGradient>
+        </TouchableOpacity>
+
+        <View style={styles.bottomSpacer} />
+      </Animated.ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: '#f8f9fa',
   },
   darkBg: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1117',
   },
-  loader: {
+
+  // Loading States
+  loadingGradient: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loaderContent: {
+    alignItems: 'center',
+  },
+  logoContainer: {
+    marginBottom: 20,
+  },
+  logoGradient: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#6B8E23',
-    padding: 15,
-    paddingTop: 10,
-  },
-  headerTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: 'white',
+    marginBottom: 8,
   },
-  saveButton: {
-    color: 'white',
+  loadingSubtext: {
     fontSize: 16,
-    fontWeight: '600',
+    color: 'rgba(255,255,255,0.8)',
+    textAlign: 'center',
   },
-  scrollContent: {
+
+  // Header
+  headerGradient: {
     paddingBottom: 20,
   },
-  section: {
-    backgroundColor: '#FFF',
-    margin: 16,
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 10,
   },
-  sectionDark: {
-    backgroundColor: '#1E1E1E',
+  backButton: {
+    width: 44,
+    height: 44,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 16,
+  backButtonBlur: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
-  sectionTitleDark: {
+  headerTextContainer: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '800',
     color: '#FFF',
   },
+  headerSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
+  },
+  saveButton: {
+    width: 44,
+    height: 44,
+  },
+  saveButtonBlur: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+
+  // Content
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
+  },
+
+  // Stats Card
+  statsCard: {
+    marginBottom: 24,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 5,
+  },
+  statsCardDark: {
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+  },
+  statsGradient: {
+    padding: 20,
+  },
+  statsContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#2c3e50',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    fontWeight: '600',
+  },
+  statDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: '#E0E0E0',
+    marginHorizontal: 20,
+  },
+
+  // Sections
+  section: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 15,
+    elevation: 3,
+  },
+  sectionDark: {
+    backgroundColor: '#21262d',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  sectionIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#2c3e50',
+  },
+  sectionTitleDark: {
+    color: '#ffffff',
+  },
+
+  // Options
   optionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E0E0E0',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  optionRowDark: {
+    borderBottomColor: '#30363d',
+  },
+  optionContent: {
+    flex: 1,
+    marginRight: 16,
   },
   optionText: {
     fontSize: 16,
-    color: '#000',
-    flex: 1,
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: 4,
   },
   optionTextDark: {
-    color: '#FFF',
+    color: '#ffffff',
   },
+  optionDescription: {
+    fontSize: 13,
+    color: '#7f8c8d',
+    lineHeight: 18,
+  },
+
+  // Allergies
   addAllergyContainer: {
     flexDirection: 'row',
-    marginBottom: 12,
+    marginBottom: 16,
+  },
+  allergyInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginRight: 12,
+  },
+  allergyInputContainerDark: {
+    backgroundColor: '#30363d',
   },
   allergyInput: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginRight: 8,
+    marginLeft: 12,
     fontSize: 16,
-    color: '#000',
+    color: '#2c3e50',
   },
   allergyInputDark: {
-    borderColor: '#333',
-    backgroundColor: '#2A2A2A',
-    color: '#FFF',
+    color: '#ffffff',
   },
   addButton: {
-    backgroundColor: '#6B8E23',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+  addButtonGradient: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  allergyTagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
   },
   allergyTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0F8E8',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    backgroundColor: '#f0f8ff',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 20,
+    marginRight: 8,
     marginBottom: 8,
-    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#4ECDC4',
+  },
+  allergyTagDark: {
+    backgroundColor: '#1e3a8a20',
+    borderColor: '#4ECDC4',
   },
   allergyText: {
     fontSize: 14,
-    color: '#6B8E23',
+    color: '#4ECDC4',
+    fontWeight: '600',
     marginRight: 8,
   },
-  infoSection: {
+  allergyTextDark: {
+    color: '#4ECDC4',
+  },
+  removeAllergyButton: {
+    padding: 2,
+  },
+
+  // Info Card
+  infoCard: {
+    marginBottom: 24,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 5,
+  },
+  infoCardDark: {
+    shadowColor: '#4ECDC4',
+    shadowOpacity: 0.2,
+  },
+  infoGradient: {
+    padding: 20,
+  },
+  infoContent: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#F0F8E8',
-    margin: 16,
-    padding: 16,
-    borderRadius: 12,
   },
-  infoSectionDark: {
-    backgroundColor: '#1E2A1E',
+  infoIcon: {
+    marginRight: 16,
+    marginTop: 2,
+  },
+  infoTextContainer: {
+    flex: 1,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: 'white',
+    marginBottom: 8,
   },
   infoText: {
     fontSize: 14,
-    color: '#5A7A3A',
-    marginLeft: 8,
-    flex: 1,
+    color: 'rgba(255,255,255,0.9)',
     lineHeight: 20,
   },
-  infoTextDark: {
-    color: '#8FA86F',
+
+  // Main Save Button
+  saveButtonMain: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#FF6B6B',
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 8,
+    marginBottom: 20,
+  },
+  saveButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+  },
+  saveButtonText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: 'white',
+    marginRight: 12,
+  },
+
+  // Text Colors
+  textDark: {
+    color: '#ffffff',
+  },
+  textSecondary: {
+    color: '#8b949e',
+  },
+
+  bottomSpacer: {
+    height: 20,
   },
 });
