@@ -22,6 +22,7 @@ import {
   getAllergenFlags,
 } from '../../services/api';
 import { getMealById, Meal } from '@/services/localData';
+import FoodAIAssistant from '../components/FoodAIAssistant';
 
 type IngredientInfo = {
   name: string;
@@ -231,142 +232,7 @@ export default function DetailsScreen() {
   }
 
   // If local meal found, render its details
-  if (localMeal) {
-    return (
-      <View style={[styles.container, isDarkMode && styles.darkBg]}>
-        <Animated.ScrollView
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: false }
-          )}
-          scrollEventThrottle={16}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Hero Image Section */}
-          <View style={styles.heroContainer}>
-            <Animated.Image 
-              source={localMeal.thumbnail} 
-              style={[
-                styles.heroImage,
-                {
-                  transform: [{ scale: headerImageScale }],
-                  opacity: headerImageOpacity,
-                }
-              ]} 
-            />
-            <View style={styles.heroOverlay} />
-            
-            {/* Floating Action Buttons */}
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-              <Ionicons name="chevron-back" size={24} color="white" />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.favoriteButton} onPress={toggleFavorite}>
-              <Ionicons
-                name={isFavorite ? 'heart' : 'heart-outline'}
-                size={24}
-                color={isFavorite ? '#FF6B6B' : 'white'}
-              />
-            </TouchableOpacity>
-          </View>
-
-          {/* Content Section */}
-          <Animated.View 
-            style={[
-              styles.contentContainer, 
-              { backgroundColor: isDarkMode ? '#1a1a1a' : '#FFF' },
-              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
-            ]}
-          >
-            {/* Title Section */}
-            <View style={styles.titleSection}>
-              <Text style={[styles.title, isDarkMode && styles.textDark]}>
-                {localMeal.name}
-              </Text>
-              <View style={styles.categoryBadge}>
-                <Text style={styles.categoryText}>{localMeal.category}</Text>
-              </View>
-            </View>
-
-            {/* Nutrition Cards */}
-            <View style={styles.nutritionGrid}>
-              <View style={[styles.nutritionCard, isDarkMode && styles.darkCard]}>
-                <Ionicons name="flame" size={20} color="#FF6B6B" />
-                <Text style={[styles.nutritionValue, isDarkMode && styles.textDark]}>
-                  {localMeal.nutrition.calories}
-                </Text>
-                <Text style={[styles.nutritionLabel, isDarkMode && styles.textSecondary]}>
-                  Calories
-                </Text>
-              </View>
-              <View style={[styles.nutritionCard, isDarkMode && styles.darkCard]}>
-                <Ionicons name="fitness" size={20} color="#4ECDC4" />
-                <Text style={[styles.nutritionValue, isDarkMode && styles.textDark]}>
-                  {localMeal.nutrition.protein}g
-                </Text>
-                <Text style={[styles.nutritionLabel, isDarkMode && styles.textSecondary]}>
-                  Protein
-                </Text>
-              </View>
-              <View style={[styles.nutritionCard, isDarkMode && styles.darkCard]}>
-                <Ionicons name="water" size={20} color="#45B7D1" />
-                <Text style={[styles.nutritionValue, isDarkMode && styles.textDark]}>
-                  {localMeal.nutrition.fat}g
-                </Text>
-                <Text style={[styles.nutritionLabel, isDarkMode && styles.textSecondary]}>
-                  Fat
-                </Text>
-              </View>
-              <View style={[styles.nutritionCard, isDarkMode && styles.darkCard]}>
-                <Ionicons name="leaf" size={20} color="#96CEB4" />
-                <Text style={[styles.nutritionValue, isDarkMode && styles.textDark]}>
-                  {localMeal.nutrition.carbs}g
-                </Text>
-                <Text style={[styles.nutritionLabel, isDarkMode && styles.textSecondary]}>
-                  Carbs
-                </Text>
-              </View>
-            </View>
-
-            {/* Instructions Section */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Ionicons name="book" size={20} color="#FF6B6B" />
-                <Text style={[styles.sectionTitle, isDarkMode && styles.textDark]}>
-                  Instructions
-                </Text>
-              </View>
-              <Text style={[styles.instructions, isDarkMode && styles.textSecondary]}>
-                {localMeal.instructions}
-              </Text>
-            </View>
-
-            {/* Ingredients Section */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Ionicons name="list" size={20} color="#4ECDC4" />
-                <Text style={[styles.sectionTitle, isDarkMode && styles.textDark]}>
-                  Ingredients
-                </Text>
-              </View>
-              <View style={styles.ingredientsList}>
-                {localMeal.ingredients.map((ing, idx) => (
-                  <View key={idx} style={[styles.ingredientItem, isDarkMode && styles.darkCard]}>
-                    <View style={styles.ingredientDot} />
-                    <Text style={[styles.ingredientText, isDarkMode && styles.textDark]}>
-                      {ing}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          </Animated.View>
-        </Animated.ScrollView>
-      </View>
-    );
-  }
-
-  // Otherwise render remote-fetched dish
+if (localMeal) {
   return (
     <View style={[styles.container, isDarkMode && styles.darkBg]}>
       <Animated.ScrollView
@@ -377,10 +243,10 @@ export default function DetailsScreen() {
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero Image Section */}
+        {/* All your existing hero, content, etc. - keep exactly as is */}
         <View style={styles.heroContainer}>
           <Animated.Image 
-            source={{ uri: dish.strMealThumb }} 
+            source={localMeal.thumbnail} 
             style={[
               styles.heroImage,
               {
@@ -405,7 +271,7 @@ export default function DetailsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Content Section */}
+        {/* Content Section - keep all existing content */}
         <Animated.View 
           style={[
             styles.contentContainer, 
@@ -413,11 +279,54 @@ export default function DetailsScreen() {
             { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
           ]}
         >
-          {/* Title Section */}
+          {/* All your existing content sections - keep as is */}
           <View style={styles.titleSection}>
             <Text style={[styles.title, isDarkMode && styles.textDark]}>
-              {dish.strMeal}
+              {localMeal.name}
             </Text>
+            <View style={styles.categoryBadge}>
+              <Text style={styles.categoryText}>{localMeal.category}</Text>
+            </View>
+          </View>
+
+          {/* Nutrition Cards */}
+          <View style={styles.nutritionGrid}>
+            <View style={[styles.nutritionCard, isDarkMode && styles.darkCard]}>
+              <Ionicons name="flame" size={20} color="#FF6B6B" />
+              <Text style={[styles.nutritionValue, isDarkMode && styles.textDark]}>
+                {localMeal.nutrition.calories}
+              </Text>
+              <Text style={[styles.nutritionLabel, isDarkMode && styles.textSecondary]}>
+                Calories
+              </Text>
+            </View>
+            <View style={[styles.nutritionCard, isDarkMode && styles.darkCard]}>
+              <Ionicons name="fitness" size={20} color="#4ECDC4" />
+              <Text style={[styles.nutritionValue, isDarkMode && styles.textDark]}>
+                {localMeal.nutrition.protein}g
+              </Text>
+              <Text style={[styles.nutritionLabel, isDarkMode && styles.textSecondary]}>
+                Protein
+              </Text>
+            </View>
+            <View style={[styles.nutritionCard, isDarkMode && styles.darkCard]}>
+              <Ionicons name="water" size={20} color="#45B7D1" />
+              <Text style={[styles.nutritionValue, isDarkMode && styles.textDark]}>
+                {localMeal.nutrition.fat}g
+              </Text>
+              <Text style={[styles.nutritionLabel, isDarkMode && styles.textSecondary]}>
+                Fat
+              </Text>
+            </View>
+            <View style={[styles.nutritionCard, isDarkMode && styles.darkCard]}>
+              <Ionicons name="leaf" size={20} color="#96CEB4" />
+              <Text style={[styles.nutritionValue, isDarkMode && styles.textDark]}>
+                {localMeal.nutrition.carbs}g
+              </Text>
+              <Text style={[styles.nutritionLabel, isDarkMode && styles.textSecondary]}>
+                Carbs
+              </Text>
+            </View>
           </View>
 
           {/* Instructions Section */}
@@ -429,85 +338,191 @@ export default function DetailsScreen() {
               </Text>
             </View>
             <Text style={[styles.instructions, isDarkMode && styles.textSecondary]}>
-              {dish.strInstructions}
+              {localMeal.instructions}
             </Text>
           </View>
 
-          {/* Ingredients & Nutrition Section */}
+          {/* Ingredients Section */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="nutrition" size={20} color="#4ECDC4" />
+              <Ionicons name="list" size={20} color="#4ECDC4" />
               <Text style={[styles.sectionTitle, isDarkMode && styles.textDark]}>
-                Ingredients & Nutrition
+                Ingredients
               </Text>
             </View>
-
-            {loadingNutrition ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color="#FF6B6B" />
-                <Text style={[styles.loadingText, isDarkMode && styles.textSecondary]}>
-                  Loading nutrition data...
-                </Text>
-              </View>
-            ) : ingredients.length > 0 ? (
-              <View style={styles.ingredientsGrid}>
-                {ingredients.map((ing, idx) => (
-                  <View key={idx} style={[styles.ingredientCard, isDarkMode && styles.darkCard]}>
-                    <View style={styles.ingredientHeader}>
-                      <Text style={[styles.ingredientName, isDarkMode && styles.textDark]}>
-                        {ing.name}
-                      </Text>
-                      <Text style={[styles.ingredientMeasure, isDarkMode && styles.textSecondary]}>
-                        {ing.measure}
-                      </Text>
-                    </View>
-                    
-                    <View style={styles.nutritionRow}>
-                      <View style={styles.nutritionItem}>
-                        <Text style={styles.nutritionNumber}>{ing.nutrition.calories}</Text>
-                        <Text style={styles.nutritionUnit}>cal</Text>
-                      </View>
-                      <View style={styles.nutritionItem}>
-                        <Text style={styles.nutritionNumber}>{ing.nutrition.protein}</Text>
-                        <Text style={styles.nutritionUnit}>p</Text>
-                      </View>
-                      <View style={styles.nutritionItem}>
-                        <Text style={styles.nutritionNumber}>{ing.nutrition.fat}</Text>
-                        <Text style={styles.nutritionUnit}>f</Text>
-                      </View>
-                      <View style={styles.nutritionItem}>
-                        <Text style={styles.nutritionNumber}>{ing.nutrition.sugars}</Text>
-                        <Text style={styles.nutritionUnit}>s</Text>
-                      </View>
-                    </View>
-
-                    {ing.allergens.length > 0 && (
-                      <View style={styles.allergensContainer}>
-                        {ing.allergens.map((allergen, i) => (
-                          <View key={i} style={styles.allergenTag}>
-                            <Text style={styles.allergenText}>
-                              {allergen.replace('en:', '')}
-                            </Text>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <View style={styles.emptyState}>
-                <Ionicons name="sad" size={40} color="#ccc" />
-                <Text style={[styles.emptyText, isDarkMode && styles.textSecondary]}>
-                  No ingredient data available
-                </Text>
-              </View>
-            )}
+            <View style={styles.ingredientsList}>
+              {localMeal.ingredients.map((ing, idx) => (
+                <View key={idx} style={[styles.ingredientItem, isDarkMode && styles.darkCard]}>
+                  <View style={styles.ingredientDot} />
+                  <Text style={[styles.ingredientText, isDarkMode && styles.textDark]}>
+                    {ing}
+                  </Text>
+                </View>
+              ))}
+            </View>
           </View>
         </Animated.View>
       </Animated.ScrollView>
+
+      {/* ADD THE AI COMPONENT HERE */}
+      <FoodAIAssistant 
+        foodName={localMeal.name}
+        mealId={localMeal.id}
+        isVisible={true}
+      />
     </View>
   );
+}
+
+// For REMOTE MEAL section, replace the return statement with:
+return (
+  <View style={[styles.container, isDarkMode && styles.darkBg]}>
+    <Animated.ScrollView
+      onScroll={Animated.event(
+        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+        { useNativeDriver: false }
+      )}
+      scrollEventThrottle={16}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* All your existing content - keep exactly as is */}
+      <View style={styles.heroContainer}>
+        <Animated.Image 
+          source={{ uri: dish.strMealThumb }} 
+          style={[
+            styles.heroImage,
+            {
+              transform: [{ scale: headerImageScale }],
+              opacity: headerImageOpacity,
+            }
+          ]} 
+        />
+        <View style={styles.heroOverlay} />
+        
+        {/* Floating Action Buttons */}
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={24} color="white" />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.favoriteButton} onPress={toggleFavorite}>
+          <Ionicons
+            name={isFavorite ? 'heart' : 'heart-outline'}
+            size={24}
+            color={isFavorite ? '#FF6B6B' : 'white'}
+          />
+        </TouchableOpacity>
+      </View>
+
+      {/* Content Section - keep all existing content */}
+      <Animated.View 
+        style={[
+          styles.contentContainer, 
+          { backgroundColor: isDarkMode ? '#1a1a1a' : '#FFF' },
+          { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+        ]}
+      >
+        {/* All your existing sections - keep exactly as is */}
+        <View style={styles.titleSection}>
+          <Text style={[styles.title, isDarkMode && styles.textDark]}>
+            {dish.strMeal}
+          </Text>
+        </View>
+
+        {/* Instructions Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="book" size={20} color="#FF6B6B" />
+            <Text style={[styles.sectionTitle, isDarkMode && styles.textDark]}>
+              Instructions
+            </Text>
+          </View>
+          <Text style={[styles.instructions, isDarkMode && styles.textSecondary]}>
+            {dish.strInstructions}
+          </Text>
+        </View>
+
+        {/* Ingredients & Nutrition Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="nutrition" size={20} color="#4ECDC4" />
+            <Text style={[styles.sectionTitle, isDarkMode && styles.textDark]}>
+              Ingredients & Nutrition
+            </Text>
+          </View>
+
+          {loadingNutrition ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#FF6B6B" />
+              <Text style={[styles.loadingText, isDarkMode && styles.textSecondary]}>
+                Loading nutrition data...
+              </Text>
+            </View>
+          ) : ingredients.length > 0 ? (
+            <View style={styles.ingredientsGrid}>
+              {ingredients.map((ing, idx) => (
+                <View key={idx} style={[styles.ingredientCard, isDarkMode && styles.darkCard]}>
+                  <View style={styles.ingredientHeader}>
+                    <Text style={[styles.ingredientName, isDarkMode && styles.textDark]}>
+                      {ing.name}
+                    </Text>
+                    <Text style={[styles.ingredientMeasure, isDarkMode && styles.textSecondary]}>
+                      {ing.measure}
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.nutritionRow}>
+                    <View style={styles.nutritionItem}>
+                      <Text style={styles.nutritionNumber}>{ing.nutrition.calories}</Text>
+                      <Text style={styles.nutritionUnit}>cal</Text>
+                    </View>
+                    <View style={styles.nutritionItem}>
+                      <Text style={styles.nutritionNumber}>{ing.nutrition.protein}</Text>
+                      <Text style={styles.nutritionUnit}>p</Text>
+                    </View>
+                    <View style={styles.nutritionItem}>
+                      <Text style={styles.nutritionNumber}>{ing.nutrition.fat}</Text>
+                      <Text style={styles.nutritionUnit}>f</Text>
+                    </View>
+                    <View style={styles.nutritionItem}>
+                      <Text style={styles.nutritionNumber}>{ing.nutrition.sugars}</Text>
+                      <Text style={styles.nutritionUnit}>s</Text>
+                    </View>
+                  </View>
+
+                  {ing.allergens.length > 0 && (
+                    <View style={styles.allergensContainer}>
+                      {ing.allergens.map((allergen, i) => (
+                        <View key={i} style={styles.allergenTag}>
+                          <Text style={styles.allergenText}>
+                            {allergen.replace('en:', '')}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.emptyState}>
+              <Ionicons name="sad" size={40} color="#ccc" />
+              <Text style={[styles.emptyText, isDarkMode && styles.textSecondary]}>
+                No ingredient data available
+              </Text>
+            </View>
+          )}
+        </View>
+      </Animated.View>
+    </Animated.ScrollView>
+
+    {/* ADD THE AI COMPONENT HERE */}
+    <FoodAIAssistant 
+      foodName={dish.strMeal}
+      mealId={dish.idMeal}
+      isVisible={true}
+    />
+  </View>
+);
 }
 
 const styles = StyleSheet.create({
